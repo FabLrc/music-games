@@ -13,6 +13,9 @@ import { parseLRC, getCurrentLyric, type LyricLine } from "@/lib/lrc-parser"
 
 type GameMode = "setup" | "playing" | "answering" | "results" | "revealing"
 
+const MAX_TRACKS = 20
+const LYRICS_FETCH_TIMEOUT = 10000 // 10 secondes par piste
+
 interface GameTrack {
   track: SpotifyApi.TrackObjectFull
   lyrics: LyricLine[]
@@ -61,6 +64,8 @@ export function MusicQuiz() {
   const [roundResults, setRoundResults] = useState<RoundResult[]>([])
   const [timeLeft, setTimeLeft] = useState(10)
   const [isLoading, setIsLoading] = useState(false)
+  const [loadingProgress, setLoadingProgress] = useState({ current: 0, total: 0 })
+  const [abortController, setAbortController] = useState<AbortController | null>(null)
 
   const loadPlaylists = async () => {
     try {
@@ -90,7 +95,19 @@ export function MusicQuiz() {
 
   // Start game based on config
   const startGame = async () => {
+    // Validate trackCount
+    const validatedTrackCount = Math.min(Math.max(1, gameConfig.trackCount || 5), MAX_TRACKS)
+    if (validatedTrackCount !== gameConfig.trackCount) {
+      setGameConfig({ ...gameConfig, trackCount: validatedTrackCount })
+    }
+
     setIsLoading(true)
+    setLoadingProgress({ current: 0, total: 0 })
+    
+    // Create abort controller for cancellation
+    const controller = new AbortController()
+    setAbortController(controller)
+    
     let tracks: SpotifyApi.TrackObjectFull[] = []
 
     try {
@@ -115,14 +132,22 @@ export function MusicQuiz() {
 
       // Shuffle and limit tracks
       const shuffled = tracks.sort(() => Math.random() - 0.5)
-      const selectedTracks = shuffled.slice(0, gameConfig.trackCount)
+      const selectedTracks = shuffled.slice(0, validatedTrackCount)
 
       console.log(`Selected ${selectedTracks.length} tracks to check for lyrics`)
 
       // Load lyrics for each track
       const tracksWithLyrics: GameTrack[] = []
+      setLoadingProgress({ current: 0, total: selectedTracks.length })
       
-      for (const track of selectedTracks) {
+      for (let i = 0; i < selectedTracks.length; i++) {
+        // Check if cancelled
+        if (controller.signal.aborted) {
+          console.log("Loading cancelled by user")
+          return
+        }
+        
+        const track = selectedTracks[i]
         if (!track || !track.artists || track.artists.length === 0) {
           console.warn("Skipping invalid track:", track)
           continue
@@ -132,9 +157,19 @@ export function MusicQuiz() {
         const trackName = track.name
         const durationSeconds = Math.floor(track.duration_ms / 1000)
 
-        console.log(`Checking lyrics for: ${trackName} by ${artistName}`)
+        console.log(`Checking lyrics for: ${trackName} by ${artistName} (${i + 1}/${selectedTracks.length})`)
+        setLoadingProgress({ current: i + 1, total: selectedTracks.length })
 
-        const lyricsData = await getLyrics(trackName, artistName, durationSeconds)
+        // Fetch lyrics with timeout
+        const lyricsData = await Promise.race([
+          getLyrics(trackName, artistName, durationSeconds),
+          new Promise<null>((_, reject) => 
+            setTimeout(() => reject(new Error('Timeout')), LYRICS_FETCH_TIMEOUT)
+          )
+        ]).catch(err => {
+          console.warn(`Failed to get lyrics for ${trackName}:`, err.message)
+          return null
+        })
 
         if (lyricsData?.syncedLyrics) {
           const parsedLyrics = parseLRC(lyricsData.syncedLyrics)
@@ -193,15 +228,31 @@ export function MusicQuiz() {
         return
       }
 
-      setGameTracks(tracksWithLyrics)
+      // Limit to requested track count (in case we got more with lyrics)
+      const finalTracks = tracksWithLyrics.slice(0, validatedTrackCount)
+
+      setGameTracks(finalTracks)
       setCurrentTrackIndex(0)
       setRoundResults([])
-      loadTrackForRound(tracksWithLyrics[0])
+      loadTrackForRound(finalTracks[0])
     } catch (error) {
       console.error("Failed to start game:", error)
-      alert("Erreur lors du chargement des chansons")
+      if (!controller.signal.aborted) {
+        alert("Erreur lors du chargement des chansons")
+      }
     } finally {
       setIsLoading(false)
+      setLoadingProgress({ current: 0, total: 0 })
+      setAbortController(null)
+    }
+  }
+
+  // Cancel loading
+  const cancelLoading = () => {
+    if (abortController) {
+      abortController.abort()
+      setIsLoading(false)
+      setLoadingProgress({ current: 0, total: 0 })
     }
   }
 
@@ -274,6 +325,7 @@ export function MusicQuiz() {
     setTimeout(() => {
       // Check if game is over
       if (currentTrackIndex + 1 >= gameTracks.length) {
+        pause()
         setGameMode("results")
       } else {
         // Next track
@@ -281,7 +333,7 @@ export function MusicQuiz() {
         loadTrackForRound(gameTracks[currentTrackIndex + 1])
       }
     }, 5000)
-  }, [gameTracks, currentTrackIndex, roundResults, loadTrackForRound, resume])
+  }, [gameTracks, currentTrackIndex, roundResults, loadTrackForRound, resume, pause])
 
   // Timer countdown when answering
   useEffect(() => {
@@ -330,9 +382,12 @@ export function MusicQuiz() {
                   <Input
                     type="number"
                     min={1}
-                    max={20}
+                    max={MAX_TRACKS}
                     value={gameConfig.trackCount}
-                    onChange={(e) => setGameConfig({ ...gameConfig, trackCount: parseInt(e.target.value) || 5 })}
+                    onChange={(e) => {
+                      const value = Math.min(Math.max(1, parseInt(e.target.value) || 5), MAX_TRACKS)
+                      setGameConfig({ ...gameConfig, trackCount: value })
+                    }}
                   />
                 </div>
 
@@ -459,19 +514,35 @@ export function MusicQuiz() {
                 )}
 
                 {/* Start button */}
-                <Button
-                  onClick={startGame}
-                  className="w-full"
-                  size="lg"
-                  disabled={
-                    isLoading ||
-                    (gameConfig.source === "playlist" && !gameConfig.sourceId) ||
-                    (gameConfig.source === "album" && !gameConfig.sourceId) ||
-                    (gameConfig.source === "random" && searchResults.length === 0)
-                  }
-                >
-                  {isLoading ? "Chargement..." : "Commencer la partie"}
-                </Button>
+                {isLoading && loadingProgress.total > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      Chargement des paroles... {loadingProgress.current}/{loadingProgress.total}
+                    </p>
+                    <Progress value={(loadingProgress.current / loadingProgress.total) * 100} />
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  {isLoading ? (
+                    <Button onClick={cancelLoading} variant="destructive" className="w-full" size="lg">
+                      Annuler
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={startGame}
+                      className="w-full"
+                      size="lg"
+                      disabled={
+                        (gameConfig.source === "playlist" && !gameConfig.sourceId) ||
+                        (gameConfig.source === "album" && !gameConfig.sourceId) ||
+                        (gameConfig.source === "random" && searchResults.length === 0)
+                      }
+                    >
+                      Commencer la partie
+                    </Button>
+                  )}
+                </div>
               </>
             )}
           </CardContent>

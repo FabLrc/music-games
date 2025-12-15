@@ -18,6 +18,11 @@ const nextConfig: NextConfig = {
         hostname: 'image-cdn-fa.spotifycdn.com',
         pathname: '/image/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'mosaic.scdn.co',
+        pathname: '/**',
+      },
     ],
   },
 };
