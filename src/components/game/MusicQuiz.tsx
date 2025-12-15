@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { getLyrics } from "@/lib/lrclib"
 import { parseLRC, getCurrentLyric, type LyricLine } from "@/lib/lrc-parser"
+import { DynamicBackground } from "@/components/DynamicBackground"
 
 type GameMode = "setup" | "playing" | "answering" | "results" | "revealing"
 
@@ -356,18 +357,20 @@ export function MusicQuiz() {
   // Render setup screen
   if (gameMode === "setup") {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center p-8 gap-4">
+      <DynamicBackground className="flex min-h-screen flex-col items-center justify-center p-8 gap-4">
         <div className="absolute top-4 right-4">
-          <Button variant="outline" onClick={() => signOut()}>
-            Déconnexion
+          <Button variant="ghost" onClick={() => signOut()} className="text-white/70 hover:text-white hover:bg-white/10">
+            ⚡ SILENCE
           </Button>
         </div>
-        <Card className="w-full max-w-2xl">
-          <CardHeader>
-            <CardTitle>Configuration de la partie</CardTitle>
+        <Card className="w-full max-w-2xl border-2 neon-border-magenta bg-gradient-to-br from-gray-900 to-black">
+          <CardHeader className="text-center">
+            <CardTitle className="text-5xl font-black tracking-wider neon-text-red uppercase" style={{ fontFamily: 'Impact, Arial Black, sans-serif' }}>
+              ♫ THE ULTIMATE JAM SESSION ♫
+            </CardTitle>
             {session?.user?.name && (
-              <p className="text-sm text-muted-foreground">
-                Connecté en tant que {session.user.name}
+              <p className="text-sm text-cyan-400 mt-2">
+                🎸 {session.user.name} is in the house!
               </p>
             )}
           </CardHeader>
@@ -378,7 +381,7 @@ export function MusicQuiz() {
               <>
                 {/* Track count selection */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Nombre de musiques</label>
+                  <label className="text-sm font-bold text-yellow-300 uppercase tracking-wide">🎵 Nombre de musiques</label>
                   <Input
                     type="number"
                     min={1}
@@ -388,37 +391,42 @@ export function MusicQuiz() {
                       const value = Math.min(Math.max(1, parseInt(e.target.value) || 5), MAX_TRACKS)
                       setGameConfig({ ...gameConfig, trackCount: value })
                     }}
+                    className="border-2 neon-border-red bg-black text-yellow-300 text-xl font-bold text-center"
                   />
                 </div>
 
                 {/* Source selection */}
                 <div className="space-y-3">
-                  <label className="text-sm font-medium">Source des musiques</label>
+                  <label className="text-sm font-bold text-cyan-300 uppercase tracking-wide">💿 VINYL SELECTORS</label>
                   
                   <div className="grid grid-cols-2 gap-2">
                     <Button
                       variant={gameConfig.source === "random" ? "default" : "outline"}
                       onClick={() => setGameConfig({ ...gameConfig, source: "random", sourceId: undefined })}
+                      className={gameConfig.source === "random" ? "bg-gradient-to-r from-green-400 to-yellow-300 text-black font-bold border-2 border-green-400 shadow-lg shadow-green-400/50 hover:shadow-green-400/70" : "border-2 border-gray-600 hover:border-cyan-400 hover:shadow-cyan-400/30 bg-gray-900/50"}
                     >
-                      Aléatoire
+                      🎲 ALÉATOIRE
                     </Button>
                     <Button
                       variant={gameConfig.source === "liked" ? "default" : "outline"}
                       onClick={() => setGameConfig({ ...gameConfig, source: "liked", sourceId: undefined })}
+                      className={gameConfig.source === "liked" ? "bg-gradient-to-r from-green-400 to-yellow-300 text-black font-bold border-2 border-green-400 shadow-lg shadow-green-400/50 hover:shadow-green-400/70" : "border-2 border-gray-600 hover:border-cyan-400 hover:shadow-cyan-400/30 bg-gray-900/50"}
                     >
-                      Titres likés
+                      ❤️ LIKÉS
                     </Button>
                     <Button
                       variant={gameConfig.source === "playlist" ? "default" : "outline"}
                       onClick={() => setGameConfig({ ...gameConfig, source: "playlist", sourceId: undefined })}
+                      className={gameConfig.source === "playlist" ? "bg-gradient-to-r from-green-400 to-yellow-300 text-black font-bold border-2 border-green-400 shadow-lg shadow-green-400/50 hover:shadow-green-400/70" : "border-2 border-gray-600 hover:border-cyan-400 hover:shadow-cyan-400/30 bg-gray-900/50"}
                     >
-                      Playlist
+                      📜 PLAYLIST
                     </Button>
                     <Button
                       variant={gameConfig.source === "album" ? "default" : "outline"}
                       onClick={() => setGameConfig({ ...gameConfig, source: "album", sourceId: undefined })}
+                      className={gameConfig.source === "album" ? "bg-gradient-to-r from-green-400 to-yellow-300 text-black font-bold border-2 border-green-400 shadow-lg shadow-green-400/50 hover:shadow-green-400/70" : "border-2 border-gray-600 hover:border-cyan-400 hover:shadow-cyan-400/30 bg-gray-900/50"}
                     >
-                      Album
+                      💽 ALBUM
                     </Button>
                   </div>
                 </div>
@@ -525,13 +533,13 @@ export function MusicQuiz() {
 
                 <div className="flex gap-2">
                   {isLoading ? (
-                    <Button onClick={cancelLoading} variant="destructive" className="w-full" size="lg">
-                      Annuler
+                    <Button onClick={cancelLoading} variant="destructive" className="w-full border-2 neon-border-red" size="lg">
+                      ⛔ ANNULER
                     </Button>
                   ) : (
                     <Button
                       onClick={startGame}
-                      className="w-full"
+                      className="w-full bg-gradient-to-r from-pink-500 via-red-500 to-fuchsia-500 hover:from-pink-600 hover:via-red-600 hover:to-fuchsia-600 text-white font-black text-2xl py-8 border-4 border-pink-400 shadow-2xl shadow-pink-500/50 hover:shadow-pink-500/80 hover:scale-105 transition-all duration-200 uppercase tracking-widest"
                       size="lg"
                       disabled={
                         (gameConfig.source === "playlist" && !gameConfig.sourceId) ||
@@ -539,7 +547,7 @@ export function MusicQuiz() {
                         (gameConfig.source === "random" && searchResults.length === 0)
                       }
                     >
-                      Commencer la partie
+                      🎸 GROOVE ON! 🎸
                     </Button>
                   )}
                 </div>
@@ -547,7 +555,7 @@ export function MusicQuiz() {
             )}
           </CardContent>
         </Card>
-      </div>
+      </DynamicBackground>
     )
   }
 
@@ -557,39 +565,50 @@ export function MusicQuiz() {
     const score = Math.round((correctCount / roundResults.length) * 100)
 
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center p-8 gap-4">
-        <Card className="w-full max-w-2xl">
-          <CardHeader>
-            <CardTitle>Résultats de la partie</CardTitle>
+      <DynamicBackground className="flex min-h-screen flex-col items-center justify-center p-8 gap-4">
+        <Card className="w-full max-w-2xl border-2 neon-border-magenta bg-gradient-to-br from-gray-900 to-black">
+          <CardHeader className="text-center bg-gradient-to-r from-purple-900/30 via-pink-900/30 to-purple-900/30">
+            <CardTitle className="text-5xl font-black tracking-wider neon-text-magenta uppercase" style={{ fontFamily: 'Impact, Arial Black, sans-serif' }}>
+              🎶 FINAL SCORE 🎶
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="text-center">
-              <p className="text-6xl font-bold mb-2">{score}%</p>
-              <p className="text-xl text-muted-foreground">
-                {correctCount} / {roundResults.length} bonnes réponses
+            <div className="text-center p-8 bg-gradient-to-r from-yellow-500/20 via-orange-500/20 to-red-500/20 rounded-lg border-2 border-yellow-400/50">
+              <p className="text-8xl font-black mb-4" style={{
+                background: 'linear-gradient(45deg, #FFFF00, #FF9900, #FF3366)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                textShadow: '0 0 30px rgba(255, 255, 0, 0.5)'
+              }}>{score}%</p>
+              <p className="text-2xl font-bold text-cyan-300">
+                ✨ {correctCount} / {roundResults.length} HITS! ✨
               </p>
             </div>
 
             <div className="space-y-3">
               {roundResults.map((result, index) => (
-                <Card key={index} className={result.correct ? "border-green-500" : "border-red-500"}>
+                <Card key={index} className={`border-2 transition-all duration-300 ${
+                  result.correct 
+                    ? "border-green-400 bg-gradient-to-r from-green-900/30 to-emerald-900/30 shadow-lg shadow-green-500/30" 
+                    : "border-red-400 bg-gradient-to-r from-red-900/30 to-pink-900/30 shadow-lg shadow-red-500/30"
+                }`}>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <p className="font-semibold">{result.trackName}</p>
-                        <p className="text-sm text-muted-foreground">{result.artist}</p>
+                        <p className="font-bold text-lg text-white">{result.trackName}</p>
+                        <p className="text-sm text-cyan-300 font-semibold">{result.artist}</p>
                         <div className="mt-2 space-y-1">
-                          <p className="text-sm">
-                            <span className="font-medium">Votre réponse:</span> {result.userAnswer}
+                          <p className="text-sm text-gray-300">
+                            <span className="font-bold text-yellow-300">🎤 Votre réponse:</span> {result.userAnswer}
                           </p>
                           {!result.correct && (
-                            <p className="text-sm text-green-600">
-                              <span className="font-medium">Bonne réponse:</span> {result.correctAnswer}
+                            <p className="text-sm text-green-400 font-semibold">
+                              <span className="font-bold">✅ Bonne réponse:</span> {result.correctAnswer}
                             </p>
                           )}
                         </div>
                       </div>
-                      <div className="text-2xl">
+                      <div className="text-4xl animate-bounce">
                         {result.correct ? "✅" : "❌"}
                       </div>
                     </div>
@@ -598,24 +617,30 @@ export function MusicQuiz() {
               ))}
             </div>
 
-            <div className="flex gap-2">
-              <Button onClick={() => setGameMode("setup")} className="flex-1" variant="outline">
-                Nouvelle configuration
+            <div className="flex gap-3">
+              <Button 
+                onClick={() => setGameMode("setup")} 
+                className="flex-1 bg-gradient-to-r from-gray-700 to-gray-900 hover:from-gray-600 hover:to-gray-800 border-2 border-gray-500 text-white font-bold text-lg py-6"
+              >
+                🔄 NOUVELLE CONFIG
               </Button>
-              <Button onClick={startGame} className="flex-1">
-                Rejouer
+              <Button 
+                onClick={startGame} 
+                className="flex-1 bg-gradient-to-r from-pink-500 via-red-500 to-fuchsia-500 hover:from-pink-600 hover:via-red-600 hover:to-fuchsia-600 border-2 border-pink-400 text-white font-black text-lg py-6 shadow-lg shadow-pink-500/50 hover:shadow-pink-500/80 hover:scale-105 transition-all duration-200"
+              >
+                🎸 REJOUER!
               </Button>
             </div>
           </CardContent>
         </Card>
-      </div>
+      </DynamicBackground>
     )
   }
 
   // Render playing/answering screen
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-8 gap-4">
-      <Card className="w-full max-w-2xl">
+    <DynamicBackground className="flex min-h-screen flex-col items-center justify-center p-8 gap-4">
+      <Card className="w-full max-w-2xl border-2 neon-border-cyan bg-gradient-to-br from-gray-900 to-black shadow-2xl shadow-cyan-500/30">
         <CardHeader>
           <CardTitle>
             Manche {currentTrackIndex + 1} / {gameTracks.length}
@@ -624,63 +649,87 @@ export function MusicQuiz() {
         <CardContent className="space-y-4">
           {currentTrack && gameTracks[currentTrackIndex] && (
             <>
-              <div className="flex items-center gap-4">
-                <Image
-                  src={currentTrack.album.images[0]?.url}
-                  alt={currentTrack.name}
-                  width={80}
-                  height={80}
-                  className="rounded"
-                />
+              <div className="flex items-center gap-4 p-4 rounded-lg bg-black/50 border-2 border-magenta-500/30">
+                <div className="relative">
+                  <Image
+                    src={currentTrack.album.images[0]?.url}
+                    alt={currentTrack.name}
+                    width={80}
+                    height={80}
+                    className="rounded border-2 border-cyan-400 shadow-lg shadow-cyan-400/50"
+                  />
+                </div>
                 <div className="flex-1">
-                  <p className="font-bold text-lg">{currentTrack.name}</p>
-                  <p className="text-muted-foreground">
+                  <p className="font-bold text-xl text-white">{currentTrack.name}</p>
+                  <p className="text-cyan-300 font-semibold">
                     {currentTrack.artists.map((a) => a.name).join(", ")}
                   </p>
                 </div>
               </div>
 
-              <Progress value={(position / duration) * 100} />
+              <div className="relative">
+                <div className="h-4 bg-black/70 rounded-full border-2 border-gray-700 overflow-hidden">
+                  <div 
+                    className="h-full transition-all duration-300 rounded-full"
+                    style={{
+                      width: `${(position / duration) * 100}%`,
+                      background: `linear-gradient(90deg, #CCFF00 0%, #CCFF00 ${100 - (position / duration) * 100}%, #FFFF00 ${100 - (position / duration) * 100}%, #FF9900 ${100 - (position / duration) * 50}%, #FF3366 100%)`,
+                      boxShadow: '0 0 10px currentColor'
+                    }}
+                  />
+                </div>
+              </div>
 
               {/* Current Lyric Display */}
               {currentLyric && (gameMode === "playing" || gameMode === "revealing") && (
-                <div className="text-center p-4 bg-accent rounded">
-                  <p className="text-xl font-semibold">{currentLyric.text}</p>
+                <div className="text-center p-6 bg-gradient-to-r from-purple-900/30 via-pink-900/30 to-purple-900/30 rounded-lg border-2 border-purple-500/50 shadow-lg shadow-purple-500/30">
+                  <p className="text-2xl font-bold text-white" style={{ textShadow: '0 0 10px rgba(255,255,255,0.5)' }}>{currentLyric.text}</p>
                 </div>
               )}
 
               {/* Answering mode */}
               {(gameMode === "answering" || gameMode === "revealing") && gameTracks[currentTrackIndex] && (
-                <div className="space-y-3">
-                  <p className="text-center font-bold text-lg">
+                <div className="space-y-4">
+                  <p className="text-center font-black text-3xl uppercase tracking-wider" style={{
+                    fontFamily: 'Impact, Arial Black, sans-serif',
+                    color: gameMode === "answering" ? '#FFFF00' : '#00FF00',
+                    textShadow: gameMode === "answering" ? '0 0 20px #FFFF00, 0 0 40px #FF9900' : '0 0 20px #00FF00'
+                  }}>
                     {gameMode === "answering" 
-                      ? `Quelle est la suite ? (${timeLeft}s)`
-                      : "Résultat"
+                      ? `🎤 DROP THE LYRICS! (${timeLeft}s)`
+                      : "✨ RÉSULTAT"
                     }
                   </p>
-                  <div className="grid grid-cols-1 gap-2">
+                  <div className="grid grid-cols-1 gap-3">
                     {gameTracks[currentTrackIndex].options.map((option, idx) => {
-                      let variant: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link" = "outline"
+                      let buttonClasses = "w-full text-left justify-start h-auto py-4 px-6 whitespace-normal font-bold text-lg transition-all duration-200 border-2 "
                       
                       if (gameMode === "revealing") {
                         const isCorrect = option === gameTracks[currentTrackIndex].hiddenLyric.text
                         const isSelected = roundResults[roundResults.length - 1]?.userAnswer === option
                         
-                        if (isCorrect) variant = "default"
-                        else if (isSelected) variant = "destructive"
+                        if (isCorrect) {
+                          buttonClasses += "bg-gradient-to-r from-green-400 to-emerald-500 text-black border-green-300 shadow-2xl shadow-green-500/70 scale-105 animate-pulse"
+                        } else if (isSelected) {
+                          buttonClasses += "bg-gradient-to-r from-red-600 to-red-800 text-white border-red-400 shadow-lg shadow-red-500/50"
+                        } else {
+                          buttonClasses += "bg-gray-800/50 text-gray-400 border-gray-600"
+                        }
+                      } else {
+                        buttonClasses += "bg-gradient-to-r from-gray-800 to-gray-900 hover:from-cyan-900 hover:to-purple-900 text-white border-gray-600 hover:border-cyan-400 hover:shadow-lg hover:shadow-cyan-400/50 hover:scale-105"
                       }
 
                       return (
                         <Button
                           key={idx}
                           onClick={() => gameMode === "answering" && submitAnswer(option)}
-                          className={`w-full text-left justify-start h-auto py-3 px-4 whitespace-normal ${
-                            gameMode === "revealing" && option === gameTracks[currentTrackIndex].hiddenLyric.text ? "bg-green-600 hover:bg-green-700 text-white border-green-600" : ""
-                          }`}
-                          variant={variant}
+                          className={buttonClasses}
                           disabled={gameMode === "revealing"}
                         >
-                          {option}
+                          <span className="flex items-center gap-2">
+                            <span className="text-cyan-400 font-black">{String.fromCharCode(65 + idx)}.</span>
+                            {option}
+                          </span>
                         </Button>
                       )
                     })}
@@ -689,18 +738,18 @@ export function MusicQuiz() {
               )}
 
               {/* Progress indicator */}
-              <div className="flex gap-2 justify-center">
+              <div className="flex gap-2 justify-center p-4 bg-black/30 rounded-lg">
                 {gameTracks.map((_, index) => (
                   <div
                     key={index}
-                    className={`w-3 h-3 rounded-full ${
+                    className={`w-4 h-4 rounded-full transition-all duration-300 ${
                       index < currentTrackIndex
                         ? roundResults[index]?.correct
-                          ? "bg-green-500"
-                          : "bg-red-500"
+                          ? "bg-green-400 shadow-lg shadow-green-400/70"
+                          : "bg-red-500 shadow-lg shadow-red-500/70"
                         : index === currentTrackIndex
-                        ? "bg-blue-500"
-                        : "bg-gray-300"
+                        ? "bg-cyan-400 shadow-lg shadow-cyan-400/70 animate-pulse scale-125"
+                        : "bg-gray-600 shadow-inner"
                     }`}
                   />
                 ))}
@@ -709,6 +758,6 @@ export function MusicQuiz() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </DynamicBackground>
   )
 }

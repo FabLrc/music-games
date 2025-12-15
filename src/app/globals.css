@@ -48,6 +48,17 @@
 
 :root {
   --radius: 0.625rem;
+  
+  /* Jukebox Party Neon - Couleurs de base */
+  --neon-black: #0A0A0A;
+  --neon-dark: #101010;
+  --neon-magenta: #FF00FF;
+  --neon-cyan: #00FFFF;
+  --neon-red: #FF3366;
+  --neon-green: #CCFF00;
+  --neon-yellow: #FFFF00;
+  --neon-orange: #FF9900;
+  
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -82,24 +93,25 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  /* Jukebox Party Neon - Mode sombre activé par défaut */
+  --background: var(--neon-black);
+  --foreground: #FFFFFF;
+  --card: var(--neon-dark);
+  --card-foreground: #FFFFFF;
+  --popover: var(--neon-dark);
+  --popover-foreground: #FFFFFF;
+  --primary: var(--neon-magenta);
+  --primary-foreground: #FFFFFF;
+  --secondary: var(--neon-cyan);
+  --secondary-foreground: var(--neon-black);
+  --muted: #1A1A1A;
+  --muted-foreground: #999999;
+  --accent: var(--neon-green);
+  --accent-foreground: var(--neon-black);
+  --destructive: var(--neon-red);
+  --border: rgba(255, 0, 255, 0.3);
+  --input: rgba(255, 255, 255, 0.1);
+  --ring: var(--neon-cyan);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
@@ -122,4 +134,157 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* === JUKEBOX PARTY NEON - Animations & Effets === */
+
+@keyframes neon-glow {
+  0%, 100% {
+    text-shadow: 
+      0 0 10px currentColor,
+      0 0 20px currentColor,
+      0 0 30px currentColor,
+      0 0 40px currentColor;
+  }
+  50% {
+    text-shadow: 
+      0 0 5px currentColor,
+      0 0 10px currentColor,
+      0 0 15px currentColor,
+      0 0 20px currentColor;
+  }
+}
+
+@keyframes neon-flicker {
+  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+    opacity: 1;
+  }
+  20%, 24%, 55% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 
+      0 0 10px currentColor,
+      0 0 20px currentColor,
+      0 0 30px currentColor;
+  }
+  50% {
+    box-shadow: 
+      0 0 5px currentColor,
+      0 0 10px currentColor,
+      0 0 15px currentColor;
+  }
+}
+
+@keyframes sound-wave {
+  0%, 100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(1.5);
+  }
+}
+
+@keyframes disco-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes slide-in {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Classes utilitaires pour les effets néon */
+.neon-text-magenta {
+  color: var(--neon-magenta);
+  animation: neon-glow 2s ease-in-out infinite;
+}
+
+.neon-text-cyan {
+  color: var(--neon-cyan);
+  animation: neon-glow 2s ease-in-out infinite;
+}
+
+.neon-text-red {
+  color: var(--neon-red);
+  animation: neon-glow 2s ease-in-out infinite;
+}
+
+.neon-text-green {
+  color: var(--neon-green);
+  animation: neon-glow 2s ease-in-out infinite;
+}
+
+.neon-border-magenta {
+  border-color: var(--neon-magenta);
+  box-shadow: 
+    0 0 5px var(--neon-magenta),
+    0 0 10px var(--neon-magenta),
+    inset 0 0 5px rgba(255, 0, 255, 0.2);
+}
+
+.neon-border-cyan {
+  border-color: var(--neon-cyan);
+  box-shadow: 
+    0 0 5px var(--neon-cyan),
+    0 0 10px var(--neon-cyan),
+    inset 0 0 5px rgba(0, 255, 255, 0.2);
+}
+
+.neon-border-red {
+  border-color: var(--neon-red);
+  box-shadow: 
+    0 0 5px var(--neon-red),
+    0 0 10px var(--neon-red),
+    inset 0 0 5px rgba(255, 51, 102, 0.2);
+}
+
+.neon-border-green {
+  border-color: var(--neon-green);
+  box-shadow: 
+    0 0 5px var(--neon-green),
+    0 0 10px var(--neon-green),
+    inset 0 0 5px rgba(204, 255, 0, 0.2);
+}
+
+/* Arrière-plan avec ondes sonores */
+.jukebox-background {
+  position: relative;
+  background: var(--neon-black);
+  overflow: hidden;
+}
+
+/* Les anciennes bandes latérales ont été retirées pour un rendu plus épuré */
+
+/* Effet de lueur pour les cartes */
+.neon-card-glow {
+  position: relative;
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+/* Transition smooth pour tous les boutons */
+button {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button:hover {
+  transform: translateY(-2px);
+}
+
+button:active {
+  transform: translateY(0);
 }
