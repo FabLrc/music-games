@@ -10,12 +10,20 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get('limit') || '10')
     const offset = parseInt(searchParams.get('offset') || '0')
+    const gameMode = searchParams.get('gameMode')
 
-    // Query leaderboard with aggregated stats
-    const { data, error } = await supabase
+    // Build query
+    let query = supabase
       .from('game_sessions')
-      .select('user_id, username, avatar_url, score')
+      .select('user_id, username, avatar_url, score, game_mode')
       .order('created_at', { ascending: false })
+
+    // Filter by game mode if specified
+    if (gameMode) {
+      query = query.eq('game_mode', gameMode)
+    }
+
+    const { data, error } = await query
 
     if (error) {
       console.error('Supabase error:', error)

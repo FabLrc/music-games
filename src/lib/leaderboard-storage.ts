@@ -53,8 +53,13 @@ export function addLocalSession(session: Omit<LocalGameSession, 'id' | 'date'>):
 /**
  * Get local statistics
  */
-export function getLocalStats() {
-  const history = getLocalHistory()
+export function getLocalStats(gameMode?: string) {
+  let history = getLocalHistory()
+  
+  // Filter by game mode if specified
+  if (gameMode) {
+    history = history.filter(game => game.gameMode === gameMode)
+  }
   
   if (history.length === 0) {
     return {

@@ -3,7 +3,7 @@
 import { useSession, signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { MusicQuiz } from "@/components/game/MusicQuiz"
+import { MusicQuiz } from "@/components/game/MusicQuiz2"
 import { DynamicBackground } from "@/components/DynamicBackground"
 
 export default function Home() {

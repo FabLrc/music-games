@@ -1,12 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import { getLocalStats, getLocalHistory, type LocalGameSession } from "@/lib/leaderboard-storage"
 import type { LeaderboardEntry } from "@/lib/supabase"
+import { GameModeType } from "@/types/game"
 
 type Tab = "global" | "personal"
 
@@ -20,32 +21,22 @@ interface PersonalStats {
 export function Leaderboard() {
   const { data: session } = useSession()
   const [activeTab, setActiveTab] = useState<Tab>("global")
+  const [selectedGameMode, setSelectedGameMode] = useState<GameModeType | "all">("all")
   const [globalLeaderboard, setGlobalLeaderboard] = useState<LeaderboardEntry[]>([])
   const [personalStats, setPersonalStats] = useState<PersonalStats | null>(null)
   const [personalHistory, setPersonalHistory] = useState<LocalGameSession[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Load global leaderboard
-  useEffect(() => {
-    if (activeTab === "global") {
-      loadGlobalLeaderboard()
-    }
-  }, [activeTab])
-
-  // Load personal stats
-  useEffect(() => {
-    if (activeTab === "personal") {
-      loadPersonalStats()
-    }
-  }, [activeTab])
-
-  const loadGlobalLeaderboard = async () => {
+  const loadGlobalLeaderboard = useCallback(async () => {
     setIsLoading(true)
     setError(null)
     
     try {
-      const response = await fetch("/api/leaderboard/top?limit=50")
+      const url = selectedGameMode === "all" 
+        ? "/api/leaderboard/top?limit=50"
+        : `/api/leaderboard/top?limit=50&gameMode=${selectedGameMode}`
+      const response = await fetch(url)
       const data = await response.json()
       
       if (response.ok) {
@@ -59,16 +50,41 @@ export function Leaderboard() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [selectedGameMode])
 
-  const loadPersonalStats = () => {
+  const loadPersonalStats = useCallback(() => {
     setIsLoading(true)
-    const stats = getLocalStats()
+    const stats = getLocalStats(selectedGameMode === "all" ? undefined : selectedGameMode)
     const history = getLocalHistory()
+    const filteredHistory = selectedGameMode === "all" 
+      ? history 
+      : history.filter(g => g.gameMode === selectedGameMode)
     setPersonalStats(stats)
-    setPersonalHistory(history)
+    setPersonalHistory(filteredHistory)
     setIsLoading(false)
-  }
+  }, [selectedGameMode])
+
+  // Load global leaderboard
+  useEffect(() => {
+    if (activeTab === "global") {
+      loadGlobalLeaderboard()
+    }
+  }, [activeTab, loadGlobalLeaderboard])
+
+  // Load personal stats
+  useEffect(() => {
+    if (activeTab === "personal") {
+      loadPersonalStats()
+    }
+  }, [activeTab, loadPersonalStats])
+
+  const GAME_MODE_FILTERS = [
+    { id: "all" as const, name: "🎯 Tous", icon: "" },
+    { id: "lyrics-quiz" as const, name: "Paroles", icon: "🎤" },
+    { id: "blind-test-title" as const, name: "Titre", icon: "🎵" },
+    { id: "blind-test-artist" as const, name: "Artiste", icon: "🎸" },
+    { id: "survival" as const, name: "Survival", icon: "⚡" },
+  ]
 
   return (
     <div className="space-y-6">
@@ -88,6 +104,21 @@ export function Leaderboard() {
         >
           👤 Personnel
         </Button>
+      </div>
+
+      {/* Game Mode Filter */}
+      <div className="flex gap-2 justify-center flex-wrap">
+        {GAME_MODE_FILTERS.map((mode) => (
+          <Button
+            key={mode.id}
+            variant={selectedGameMode === mode.id ? "default" : "outline"}
+            onClick={() => setSelectedGameMode(mode.id)}
+            size="sm"
+            className="min-w-[100px]"
+          >
+            {mode.icon} {mode.name}
+          </Button>
+        ))}
       </div>
 
       {/* Content */}
@@ -299,29 +330,44 @@ function PersonalStats({
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {history.slice(0, 10).map((game) => (
-              <div
-                key={game.id}
-                className="flex items-center justify-between p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
-              >
-                <div>
-                  <p className="font-semibold">
-                    {game.score} / {game.totalQuestions} points
-                  </p>
-                  <p className="text-sm text-gray-400">
-                    {new Date(game.date).toLocaleDateString("fr-FR", {
-                      day: "numeric",
-                      month: "short",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </p>
+            {history.slice(0, 10).map((game) => {
+              const getModeIcon = (mode: string) => {
+                switch (mode) {
+                  case "lyrics-quiz": return "🎤"
+                  case "blind-test-title": return "🎵"
+                  case "blind-test-artist": return "🎸"
+                  case "survival": return "⚡"
+                  default: return "🎮"
+                }
+              }
+              
+              return (
+                <div
+                  key={game.id}
+                  className="flex items-center justify-between p-3 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{getModeIcon(game.gameMode)}</span>
+                    <div>
+                      <p className="font-semibold">
+                        {game.score} / {game.totalQuestions} points
+                      </p>
+                      <p className="text-sm text-gray-400">
+                        {new Date(game.date).toLocaleDateString("fr-FR", {
+                          day: "numeric",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-400">{game.sourceType}</p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm text-gray-400">{game.sourceType}</p>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </CardContent>
       </Card>
