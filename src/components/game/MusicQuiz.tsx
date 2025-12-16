@@ -16,6 +16,12 @@ import { DynamicBackground } from "@/components/DynamicBackground"
 type GameMode = "setup" | "playing" | "answering" | "results" | "revealing"
 
 const MAX_TRACKS = 20
+
+interface GameConfig {
+  source: string
+  sourceId?: string
+  trackCount: number
+}
 const LYRICS_FETCH_TIMEOUT = 10000 // 10 secondes par piste
 
 interface GameTrack {
@@ -132,96 +138,117 @@ export function MusicQuiz() {
 
       console.log(`Found ${tracks.length} tracks from source`)
 
-      // Shuffle and limit tracks
+      // Shuffle and limit tracks - take more to ensure we get enough with lyrics
       const shuffled = tracks.sort(() => Math.random() - 0.5)
-      const selectedTracks = shuffled.slice(0, validatedTrackCount)
+      const selectedTracks = shuffled.slice(0, Math.min(validatedTrackCount * 3, tracks.length))
 
       console.log(`Selected ${selectedTracks.length} tracks to check for lyrics`)
 
-      // Load lyrics for each track
-      const tracksWithLyrics: GameTrack[] = []
+      // Load lyrics for all tracks in parallel with controlled concurrency
       setLoadingProgress({ current: 0, total: selectedTracks.length })
       
-      for (let i = 0; i < selectedTracks.length; i++) {
-        // Check if cancelled
+      // Process in batches to avoid overwhelming the API
+      const BATCH_SIZE = 5
+      const tracksWithLyrics: GameTrack[] = []
+      
+      for (let batchStart = 0; batchStart < selectedTracks.length; batchStart += BATCH_SIZE) {
         if (controller.signal.aborted) {
           console.log("Loading cancelled by user")
           return
         }
         
-        const track = selectedTracks[i]
+        const batchEnd = Math.min(batchStart + BATCH_SIZE, selectedTracks.length)
+        const batch = selectedTracks.slice(batchStart, batchEnd)
+        
+        const lyricsPromises = batch.map(async (track, index) => {
+        // Check if cancelled
+        if (controller.signal.aborted) {
+          return null
+        }
+        
         if (!track || !track.artists || track.artists.length === 0) {
           console.warn("Skipping invalid track:", track)
-          continue
+          return null
         }
 
         const artistName = track.artists[0]?.name || ""
         const trackName = track.name
         const durationSeconds = Math.floor(track.duration_ms / 1000)
 
-        console.log(`Checking lyrics for: ${trackName} by ${artistName} (${i + 1}/${selectedTracks.length})`)
-        setLoadingProgress({ current: i + 1, total: selectedTracks.length })
+        console.log(`Checking lyrics for: ${trackName} by ${artistName}`)
 
-        // Fetch lyrics with timeout
+        // Fetch lyrics with shorter timeout (parallelized so we can afford it)
         const lyricsData = await Promise.race([
           getLyrics(trackName, artistName, durationSeconds),
           new Promise<null>((_, reject) => 
-            setTimeout(() => reject(new Error('Timeout')), LYRICS_FETCH_TIMEOUT)
+            setTimeout(() => reject(new Error('Timeout')), 5000) // Reduced to 5s
           )
         ]).catch(err => {
           console.warn(`Failed to get lyrics for ${trackName}:`, err.message)
           return null
         })
 
-        if (lyricsData?.syncedLyrics) {
-          const parsedLyrics = parseLRC(lyricsData.syncedLyrics)
-          
-          console.log(`Found ${parsedLyrics.length} lyric lines for ${trackName}`)
+        // Update progress
+        setLoadingProgress(prev => ({ ...prev, current: prev.current + 1 }))
 
-          if (parsedLyrics.length >= 5) {
-            // Pick random lyric to hide (not first or last)
-            const randomIndex = Math.floor(Math.random() * (parsedLyrics.length - 2)) + 1
-            const hiddenLyric = parsedLyrics[randomIndex]
-
-            // Generate options
-            const allLines = parsedLyrics.map(l => l.text).filter(t => t.trim() !== "")
-            const uniqueLines = Array.from(new Set(allLines))
-            const distractors = uniqueLines
-              .filter(l => l !== hiddenLyric.text)
-              .sort(() => Math.random() - 0.5)
-              .slice(0, 3)
-            
-            // Ensure we have at least 4 options (even if we have to duplicate)
-            let options: string[]
-            if (distractors.length >= 3) {
-              options = [hiddenLyric.text, ...distractors].sort(() => Math.random() - 0.5)
-            } else {
-              // Not enough unique lines, add what we have and pad if necessary
-              options = [hiddenLyric.text, ...distractors]
-              while (options.length < 4 && uniqueLines.length > 0) {
-                const randomLine = uniqueLines[Math.floor(Math.random() * uniqueLines.length)]
-                if (!options.includes(randomLine)) {
-                  options.push(randomLine)
-                }
-              }
-              options = options.sort(() => Math.random() - 0.5)
-            }
-
-            tracksWithLyrics.push({
-              track,
-              lyrics: parsedLyrics,
-              hiddenLyric,
-              options,
-            })
-
-            console.log(`Added ${trackName} to game tracks with ${options.length} options`)
-          } else {
-            console.log(`Not enough lyrics for ${trackName}`)
-          }
-        } else {
-          console.log(`No synced lyrics found for ${trackName}`)
+        if (!lyricsData?.syncedLyrics) {
+          return null
         }
+
+        const parsedLyrics = parseLRC(lyricsData.syncedLyrics)
+        
+        if (parsedLyrics.length < 5) {
+          console.log(`Not enough lyrics for ${trackName}`)
+          return null
+        }
+
+        // Pick random lyric to hide (not first or last)
+        const randomIndex = Math.floor(Math.random() * (parsedLyrics.length - 2)) + 1
+        const hiddenLyric = parsedLyrics[randomIndex]
+
+        // Generate options
+        const allLines = parsedLyrics.map(l => l.text).filter(t => t.trim() !== "")
+        const uniqueLines = Array.from(new Set(allLines))
+        const distractors = uniqueLines
+          .filter(l => l !== hiddenLyric.text)
+          .sort(() => Math.random() - 0.5)
+          .slice(0, 3)
+        
+        // Ensure we have at least 4 options
+        let options: string[]
+        if (distractors.length >= 3) {
+          options = [hiddenLyric.text, ...distractors].sort(() => Math.random() - 0.5)
+        } else {
+          options = [hiddenLyric.text, ...distractors]
+          while (options.length < 4 && uniqueLines.length > 0) {
+            const randomLine = uniqueLines[Math.floor(Math.random() * uniqueLines.length)]
+            if (!options.includes(randomLine)) {
+              options.push(randomLine)
+            }
+          }
+          options = options.sort(() => Math.random() - 0.5)
+        }
+
+        console.log(`Found lyrics for ${trackName}`)
+        return {
+          track,
+          lyrics: parsedLyrics,
+          hiddenLyric,
+          options,
+        }
+      })
+
+      // Wait for batch to complete
+      const batchResults = await Promise.all(lyricsPromises)
+      const validResults = batchResults.filter((result): result is GameTrack => result !== null)
+      tracksWithLyrics.push(...validResults)
+      
+      // Stop early if we have enough tracks with lyrics
+      if (tracksWithLyrics.length >= validatedTrackCount) {
+        console.log(`Found enough tracks with lyrics (${tracksWithLyrics.length}), stopping early`)
+        break
       }
+    }
 
       console.log(`Final tracks with lyrics: ${tracksWithLyrics.length}`)
 
@@ -266,12 +293,12 @@ export function MusicQuiz() {
       // Seek to a few seconds before the hidden lyric
       const seekTime = Math.max(0, (gameTrack.hiddenLyric.time - 5) * 1000)
       
-      // Wait a bit before seeking to ensure track is loaded
+      // Reduced wait time for better responsiveness
       setTimeout(() => {
         seek(seekTime)
         setGameMode("playing")
         setTimeLeft(10)
-      }, 500)
+      }, 200) // Reduced from 500ms to 200ms
     } catch (error) {
       console.error("Failed to load track:", error)
       alert(`Erreur lors du chargement de la piste: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
@@ -324,18 +351,36 @@ export function MusicQuiz() {
     setGameMode("revealing")
     resume()
 
+    // Preload next track while showing the reveal
+    const nextTrackIndex = currentTrackIndex + 1
+    if (nextTrackIndex < gameTracks.length) {
+      const nextTrack = gameTracks[nextTrackIndex]
+      // Preload in background (don't await)
+      play(nextTrack.track.uri).catch(err => {
+        console.warn("Failed to preload next track:", err)
+      })
+    }
+
     setTimeout(() => {
       // Check if game is over
-      if (currentTrackIndex + 1 >= gameTracks.length) {
+      if (nextTrackIndex >= gameTracks.length) {
         pause()
         setGameMode("results")
       } else {
-        // Next track
-        setCurrentTrackIndex(currentTrackIndex + 1)
-        loadTrackForRound(gameTracks[currentTrackIndex + 1])
+        // Next track (already preloaded)
+        setCurrentTrackIndex(nextTrackIndex)
+        const nextGameTrack = gameTracks[nextTrackIndex]
+        const seekTime = Math.max(0, (nextGameTrack.hiddenLyric.time - 5) * 1000)
+        
+        // Since track is preloaded, seek and start immediately
+        setTimeout(() => {
+          seek(seekTime)
+          setGameMode("playing")
+          setTimeLeft(10)
+        }, 100) // Minimal delay
       }
     }, 5000)
-  }, [gameTracks, currentTrackIndex, roundResults, loadTrackForRound, resume, pause])
+  }, [gameTracks, currentTrackIndex, roundResults, play, resume, pause, seek])
 
   // Timer countdown when answering
   useEffect(() => {

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getCachedLyrics, setCachedLyrics } from './lyrics-cache';
 
 export interface LyricsData {
   id: number;
@@ -18,6 +19,13 @@ export const getLyrics = async (
   artistName: string,
   duration: number
 ): Promise<LyricsData | null> => {
+  // Check cache first
+  const cached = getCachedLyrics(trackName, artistName, duration);
+  if (cached !== undefined) {
+    console.log(`Cache hit for: ${trackName} by ${artistName}`);
+    return cached;
+  }
+
   try {
     const response = await axios.get<LyricsData>(`${LRCLIB_API_URL}/get`, {
       params: {
@@ -30,11 +38,12 @@ export const getLyrics = async (
       }
     });
     
-    if (response.status === 404) {
-      return null;
-    }
-
-    return response.data;
+    const result = response.status === 404 ? null : response.data;
+    
+    // Cache the result (even if null to avoid repeated failed requests)
+    setCachedLyrics(trackName, artistName, duration, result);
+    
+    return result;
   } catch (error) {
     console.error('Error fetching lyrics:', error);
     return null;
