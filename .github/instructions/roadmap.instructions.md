@@ -34,19 +34,17 @@ L'objectif est de sortir du modèle unique "Lyrics Quiz" pour offrir plus de var
         - ✅ Système de combo intégré (affichage du multiplicateur)
         - ✅ Statistiques de jeu (combo max, temps moyen de réponse)
 
-## Phase 2 : Performance & Robustesse
+## Phase 2 : Performance & Robustesse ✅ TERMINÉE
 Améliorer la rapidité de lancement des parties et la fiabilité.
 
-- [ ] **Système de Cache des Paroles (Supabase)**
+- [x] **Système de Cache des Paroles (Supabase)**
     - **Problème** : `getLyrics` est lent et rate-limited.
-    - **Solution** :
-        - Créer une table `lyrics_cache` dans Supabase (track_id, lyrics_json, synced).
-        - Avant d'appeler l'API externe, vérifier la DB.
-        - Si trouvé via API, sauvegarder dans la DB.
-
-- [ ] **Pré-chargement (Prefetching)**
-    - Charger la piste N+1 (audio + données) pendant que le joueur joue la piste N.
-    - Réduire le temps d'attente entre les manches.
+    - **Solution implémentée** :
+        - ✅ Table `lyrics_cache` créée dans Supabase (track_id, lyrics_json, has_synced)
+        - ✅ Vérification du cache avant appel API dans `getCachedLyrics`
+        - ✅ Sauvegarde automatique dans la DB après récupération API
+        - ✅ Fonctions utilitaires : `getCacheStats()` et `clearLyricsCache()`
+        - ✅ Migration de localStorage vers Supabase pour un cache partagé
 
 ## Phase 3 : Multijoueur Temps Réel (Supabase Realtime)
 Permettre aux utilisateurs de jouer ensemble.

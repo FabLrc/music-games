@@ -19,8 +19,8 @@ export const getLyrics = async (
   artistName: string,
   duration: number
 ): Promise<LyricsData | null> => {
-  // Check cache first
-  const cached = getCachedLyrics(trackName, artistName, duration);
+  // Check Supabase cache first
+  const cached = await getCachedLyrics(trackName, artistName, duration);
   if (cached !== undefined) {
     console.log(`Cache hit for: ${trackName} by ${artistName}`);
     return cached;
@@ -40,8 +40,8 @@ export const getLyrics = async (
     
     const result = response.status === 404 ? null : response.data;
     
-    // Cache the result (even if null to avoid repeated failed requests)
-    setCachedLyrics(trackName, artistName, duration, result);
+    // Cache the result in Supabase (even if null to avoid repeated failed requests)
+    await setCachedLyrics(trackName, artistName, duration, result);
     
     return result;
   } catch (error) {

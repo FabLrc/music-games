@@ -1,61 +1,47 @@
 /**
  * Cache system for lyrics data to avoid repeated API calls
+ * Phase 2: Migrated to Supabase for persistent, shared caching
  */
 
 import { LyricsData } from './lrclib'
-
-const CACHE_KEY_PREFIX = 'lyrics_cache_'
-const CACHE_VERSION = 'v1'
-const CACHE_EXPIRY_DAYS = 30
-
-interface CachedLyrics {
-  data: LyricsData | null
-  timestamp: number
-  version: string
-}
+import { supabase } from './supabase'
 
 /**
- * Generate a unique cache key for a track
+ * Generate a unique track ID for cache key
  */
-function getCacheKey(trackName: string, artistName: string, duration: number): string {
+function getTrackId(trackName: string, artistName: string, duration: number): string {
   const normalized = `${trackName.toLowerCase()}_${artistName.toLowerCase()}_${duration}`
-  return `${CACHE_KEY_PREFIX}${CACHE_VERSION}_${normalized}`
+  return normalized.replace(/[^a-z0-9_]/g, '_')
 }
 
 /**
- * Check if cached data is still valid
+ * Get lyrics from Supabase cache
  */
-function isExpired(timestamp: number): boolean {
-  const now = Date.now()
-  const expiryMs = CACHE_EXPIRY_DAYS * 24 * 60 * 60 * 1000
-  return now - timestamp > expiryMs
-}
-
-/**
- * Get lyrics from cache
- */
-export function getCachedLyrics(
+export async function getCachedLyrics(
   trackName: string,
   artistName: string,
   duration: number
-): LyricsData | null | undefined {
+): Promise<LyricsData | null | undefined> {
   try {
-    const key = getCacheKey(trackName, artistName, duration)
-    const cached = localStorage.getItem(key)
+    const trackId = getTrackId(trackName, artistName, duration)
     
-    if (!cached) {
-      return undefined // Not in cache
-    }
-
-    const parsed: CachedLyrics = JSON.parse(cached)
+    const { data, error } = await supabase
+      .from('lyrics_cache')
+      .select('lyrics_json, has_synced')
+      .eq('track_id', trackId)
+      .single()
     
-    // Check version and expiry
-    if (parsed.version !== CACHE_VERSION || isExpired(parsed.timestamp)) {
-      localStorage.removeItem(key)
+    if (error) {
+      // Not found in cache
+      if (error.code === 'PGRST116') {
+        return undefined
+      }
+      console.error('Error reading from Supabase lyrics cache:', error)
       return undefined
     }
 
-    return parsed.data
+    // Return the cached lyrics data
+    return data?.lyrics_json as LyricsData | null
   } catch (error) {
     console.error('Error reading from lyrics cache:', error)
     return undefined
@@ -63,83 +49,98 @@ export function getCachedLyrics(
 }
 
 /**
- * Save lyrics to cache
+ * Save lyrics to Supabase cache
  */
-export function setCachedLyrics(
+export async function setCachedLyrics(
   trackName: string,
   artistName: string,
   duration: number,
   data: LyricsData | null
-): void {
+): Promise<void> {
   try {
-    const key = getCacheKey(trackName, artistName, duration)
-    const cached: CachedLyrics = {
-      data,
-      timestamp: Date.now(),
-      version: CACHE_VERSION,
-    }
+    const trackId = getTrackId(trackName, artistName, duration)
     
-    localStorage.setItem(key, JSON.stringify(cached))
+    const { error } = await supabase
+      .from('lyrics_cache')
+      .upsert({
+        track_id: trackId,
+        track_name: trackName,
+        artist_name: artistName,
+        duration,
+        lyrics_json: data,
+        has_synced: data?.syncedLyrics ? true : false,
+      }, {
+        onConflict: 'track_id'
+      })
+    
+    if (error) {
+      console.error('Error writing to Supabase lyrics cache:', error)
+    }
   } catch (error) {
     console.error('Error writing to lyrics cache:', error)
-    // If localStorage is full, try to clear old entries
-    if (error instanceof DOMException && error.name === 'QuotaExceededError') {
-      clearOldCache()
-      // Try again
-      try {
-        const key = getCacheKey(trackName, artistName, duration)
-        const cached: CachedLyrics = {
-          data,
-          timestamp: Date.now(),
-          version: CACHE_VERSION,
-        }
-        localStorage.setItem(key, JSON.stringify(cached))
-      } catch {
-        // Still failed, ignore
-      }
+  }
+}
+
+/**
+ * Clear all lyrics cache from Supabase
+ * Useful for testing or maintenance
+ */
+export async function clearLyricsCache(): Promise<number> {
+  try {
+    // Get count first
+    const { count } = await supabase
+      .from('lyrics_cache')
+      .select('*', { count: 'exact', head: true })
+    
+    // Then delete
+    const { error } = await supabase
+      .from('lyrics_cache')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000')
+    
+    if (error) {
+      console.error('Error clearing lyrics cache:', error)
+      return 0
     }
+    
+    console.log(`Cleared ${count || 0} cache entries`)
+    return count || 0
+  } catch (error) {
+    console.error('Error clearing cache:', error)
+    return 0
   }
 }
 
 /**
- * Clear old cache entries to free up space
+ * Get cache statistics
  */
-function clearOldCache(): void {
+export async function getCacheStats(): Promise<{
+  total: number
+  withSynced: number
+  withoutLyrics: number
+}> {
   try {
-    const keys = Object.keys(localStorage)
-    const cacheKeys = keys.filter(key => key.startsWith(CACHE_KEY_PREFIX))
+    const { count: total } = await supabase
+      .from('lyrics_cache')
+      .select('*', { count: 'exact', head: true })
     
-    // Sort by timestamp and remove oldest half
-    const entries = cacheKeys.map(key => {
-      try {
-        const data: CachedLyrics = JSON.parse(localStorage.getItem(key) || '{}')
-        return { key, timestamp: data.timestamp || 0 }
-      } catch {
-        return { key, timestamp: 0 }
-      }
-    })
+    const { count: withSynced } = await supabase
+      .from('lyrics_cache')
+      .select('*', { count: 'exact', head: true })
+      .eq('has_synced', true)
     
-    entries.sort((a, b) => a.timestamp - b.timestamp)
-    const toRemove = entries.slice(0, Math.ceil(entries.length / 2))
+    const { count: withoutLyrics } = await supabase
+      .from('lyrics_cache')
+      .select('*', { count: 'exact', head: true })
+      .is('lyrics_json', null)
     
-    toRemove.forEach(entry => localStorage.removeItem(entry.key))
-    
-    console.log(`Cleared ${toRemove.length} old cache entries`)
+    return {
+      total: total || 0,
+      withSynced: withSynced || 0,
+      withoutLyrics: withoutLyrics || 0
+    }
   } catch (error) {
-    console.error('Error clearing cache:', error)
-  }
-}
-
-/**
- * Clear all lyrics cache
- */
-export function clearLyricsCache(): void {
-  try {
-    const keys = Object.keys(localStorage)
-    const cacheKeys = keys.filter(key => key.startsWith(CACHE_KEY_PREFIX))
-    cacheKeys.forEach(key => localStorage.removeItem(key))
-    console.log(`Cleared ${cacheKeys.length} cache entries`)
-  } catch (error) {
-    console.error('Error clearing cache:', error)
+    console.error('Error getting cache stats:', error)
+    return { total: 0, withSynced: 0, withoutLyrics: 0 }
   }
 }
