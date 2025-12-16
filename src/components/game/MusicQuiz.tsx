@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
+import { Slider } from "@/components/ui/slider"
 import { getLyrics } from "@/lib/lrclib"
 import { parseLRC, getCurrentLyric, type LyricLine } from "@/lib/lrc-parser"
 import { DynamicBackground } from "@/components/DynamicBackground"
@@ -363,68 +364,80 @@ export function MusicQuiz() {
             ⚡ SILENCE
           </Button>
         </div>
-        <Card className="w-full max-w-2xl border-2 neon-border-magenta bg-gradient-to-br from-gray-900 to-black">
-          <CardHeader className="text-center">
-            <CardTitle className="text-5xl font-black tracking-wider neon-text-red uppercase" style={{ fontFamily: 'Impact, Arial Black, sans-serif' }}>
+        <Card className="w-full max-w-2xl border-2 neon-border-magenta bg-gradient-to-br from-gray-900 to-black shadow-2xl">
+          <CardHeader className="text-center pb-8">
+            <CardTitle className="text-5xl font-black tracking-wider uppercase text-white mb-3" style={{ fontFamily: 'Impact, Arial Black, sans-serif', textShadow: '0 0 20px rgba(236, 72, 153, 0.8), 0 0 40px rgba(236, 72, 153, 0.5)' }}>
               ♫ THE ULTIMATE JAM SESSION ♫
             </CardTitle>
             {session?.user?.name && (
-              <p className="text-sm text-cyan-400 mt-2">
+              <p className="text-sm text-gray-300 mt-2">
                 🎸 {session.user.name} is in the house!
               </p>
             )}
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-8 px-8 pb-8">
             {!isReady && <p className="text-muted-foreground">Chargement du lecteur Spotify...</p>}
 
             {isReady && (
               <>
                 {/* Track count selection */}
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-yellow-300 uppercase tracking-wide">🎵 Nombre de musiques</label>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={MAX_TRACKS}
-                    value={gameConfig.trackCount}
-                    onChange={(e) => {
-                      const value = Math.min(Math.max(1, parseInt(e.target.value) || 5), MAX_TRACKS)
-                      setGameConfig({ ...gameConfig, trackCount: value })
-                    }}
-                    className="border-2 neon-border-red bg-black text-yellow-300 text-xl font-bold text-center"
-                  />
+                <div className="space-y-4">
+                  <label className="text-sm font-bold text-gray-200 uppercase tracking-wide block">Nombre de titres</label>
+                  <div className="space-y-3">
+                    <Slider
+                      min={1}
+                      max={MAX_TRACKS}
+                      step={1}
+                      value={[gameConfig.trackCount]}
+                      onValueChange={(value) => setGameConfig({ ...gameConfig, trackCount: value[0] })}
+                      className="w-full"
+                    />
+                    <div className="text-center">
+                      <span className="text-4xl font-black bg-gradient-to-r from-pink-400 to-fuchsia-500 bg-clip-text text-transparent" style={{ textShadow: '0 0 20px rgba(236, 72, 153, 0.5)' }}>
+                        {gameConfig.trackCount}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Source selection */}
-                <div className="space-y-3">
-                  <label className="text-sm font-bold text-cyan-300 uppercase tracking-wide">💿 VINYL SELECTORS</label>
+                <div className="space-y-4">
+                  <label className="text-sm font-bold text-gray-200 uppercase tracking-wide block">Mode de jeu</label>
                   
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-3">
                     <Button
-                      variant={gameConfig.source === "random" ? "default" : "outline"}
+                      variant="outline"
                       onClick={() => setGameConfig({ ...gameConfig, source: "random", sourceId: undefined })}
-                      className={gameConfig.source === "random" ? "bg-gradient-to-r from-green-400 to-yellow-300 text-black font-bold border-2 border-green-400 shadow-lg shadow-green-400/50 hover:shadow-green-400/70" : "border-2 border-gray-600 hover:border-cyan-400 hover:shadow-cyan-400/30 bg-gray-900/50"}
+                      className={gameConfig.source === "random" 
+                        ? "bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white font-bold border-2 border-pink-400 shadow-lg shadow-pink-500/50 hover:shadow-pink-500/70 py-6" 
+                        : "border-2 border-gray-600 hover:border-pink-400/50 bg-transparent text-white font-semibold py-6 hover:bg-gray-800/50"}
                     >
                       🎲 ALÉATOIRE
                     </Button>
                     <Button
-                      variant={gameConfig.source === "liked" ? "default" : "outline"}
+                      variant="outline"
                       onClick={() => setGameConfig({ ...gameConfig, source: "liked", sourceId: undefined })}
-                      className={gameConfig.source === "liked" ? "bg-gradient-to-r from-green-400 to-yellow-300 text-black font-bold border-2 border-green-400 shadow-lg shadow-green-400/50 hover:shadow-green-400/70" : "border-2 border-gray-600 hover:border-cyan-400 hover:shadow-cyan-400/30 bg-gray-900/50"}
+                      className={gameConfig.source === "liked" 
+                        ? "bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white font-bold border-2 border-pink-400 shadow-lg shadow-pink-500/50 hover:shadow-pink-500/70 py-6" 
+                        : "border-2 border-gray-600 hover:border-pink-400/50 bg-transparent text-white font-semibold py-6 hover:bg-gray-800/50"}
                     >
                       ❤️ LIKÉS
                     </Button>
                     <Button
-                      variant={gameConfig.source === "playlist" ? "default" : "outline"}
+                      variant="outline"
                       onClick={() => setGameConfig({ ...gameConfig, source: "playlist", sourceId: undefined })}
-                      className={gameConfig.source === "playlist" ? "bg-gradient-to-r from-green-400 to-yellow-300 text-black font-bold border-2 border-green-400 shadow-lg shadow-green-400/50 hover:shadow-green-400/70" : "border-2 border-gray-600 hover:border-cyan-400 hover:shadow-cyan-400/30 bg-gray-900/50"}
+                      className={gameConfig.source === "playlist" 
+                        ? "bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white font-bold border-2 border-pink-400 shadow-lg shadow-pink-500/50 hover:shadow-pink-500/70 py-6" 
+                        : "border-2 border-gray-600 hover:border-pink-400/50 bg-transparent text-white font-semibold py-6 hover:bg-gray-800/50"}
                     >
                       📜 PLAYLIST
                     </Button>
                     <Button
-                      variant={gameConfig.source === "album" ? "default" : "outline"}
+                      variant="outline"
                       onClick={() => setGameConfig({ ...gameConfig, source: "album", sourceId: undefined })}
-                      className={gameConfig.source === "album" ? "bg-gradient-to-r from-green-400 to-yellow-300 text-black font-bold border-2 border-green-400 shadow-lg shadow-green-400/50 hover:shadow-green-400/70" : "border-2 border-gray-600 hover:border-cyan-400 hover:shadow-cyan-400/30 bg-gray-900/50"}
+                      className={gameConfig.source === "album" 
+                        ? "bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white font-bold border-2 border-pink-400 shadow-lg shadow-pink-500/50 hover:shadow-pink-500/70 py-6" 
+                        : "border-2 border-gray-600 hover:border-pink-400/50 bg-transparent text-white font-semibold py-6 hover:bg-gray-800/50"}
                     >
                       💽 ALBUM
                     </Button>
@@ -433,8 +446,8 @@ export function MusicQuiz() {
 
                 {/* Playlist selection */}
                 {gameConfig.source === "playlist" && (
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Sélectionner une playlist</label>
+                  <div className="space-y-3 pt-4 border-t border-gray-700">
+                    <label className="text-sm font-bold text-gray-200 uppercase tracking-wide block">Sélectionner une playlist</label>
                     <div className="max-h-60 overflow-y-auto space-y-2">
                       {playlists.map((playlist) => (
                         <Card
@@ -468,8 +481,8 @@ export function MusicQuiz() {
 
                 {/* Album/Random search */}
                 {(gameConfig.source === "album" || gameConfig.source === "random") && (
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">
+                  <div className="space-y-3 pt-4 border-t border-gray-700">
+                    <label className="text-sm font-bold text-gray-200 uppercase tracking-wide block">
                       {gameConfig.source === "album" ? "Rechercher un album" : "Rechercher des chansons"}
                     </label>
                     <div className="flex gap-2">
@@ -478,8 +491,14 @@ export function MusicQuiz() {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                        className="bg-gray-900/70 border-gray-600 text-white placeholder:text-gray-500"
                       />
-                      <Button onClick={handleSearch}>Rechercher</Button>
+                      <Button 
+                        onClick={handleSearch}
+                        className="bg-pink-500 hover:bg-pink-600 text-white font-semibold border-2 border-pink-400"
+                      >
+                        🔍
+                      </Button>
                     </div>
 
                     {searchResults.length > 0 && (
@@ -524,22 +543,22 @@ export function MusicQuiz() {
                 {/* Start button */}
                 {isLoading && loadingProgress.total > 0 && (
                   <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-gray-300">
                       Chargement des paroles... {loadingProgress.current}/{loadingProgress.total}
                     </p>
                     <Progress value={(loadingProgress.current / loadingProgress.total) * 100} />
                   </div>
                 )}
 
-                <div className="flex gap-2">
+                <div className="flex gap-2 pt-4">
                   {isLoading ? (
-                    <Button onClick={cancelLoading} variant="destructive" className="w-full border-2 neon-border-red" size="lg">
+                    <Button onClick={cancelLoading} variant="destructive" className="w-full border-2 border-red-400 py-7" size="lg">
                       ⛔ ANNULER
                     </Button>
                   ) : (
                     <Button
                       onClick={startGame}
-                      className="w-full bg-gradient-to-r from-pink-500 via-red-500 to-fuchsia-500 hover:from-pink-600 hover:via-red-600 hover:to-fuchsia-600 text-white font-black text-2xl py-8 border-4 border-pink-400 shadow-2xl shadow-pink-500/50 hover:shadow-pink-500/80 hover:scale-105 transition-all duration-200 uppercase tracking-widest"
+                      className="w-full bg-gradient-to-r from-pink-500 via-fuchsia-500 to-pink-600 hover:from-pink-600 hover:via-fuchsia-600 hover:to-pink-700 text-white font-black text-2xl py-8 border-2 border-pink-400 shadow-2xl shadow-pink-500/50 hover:shadow-pink-500/80 hover:scale-105 transition-all duration-200 uppercase tracking-widest"
                       size="lg"
                       disabled={
                         (gameConfig.source === "playlist" && !gameConfig.sourceId) ||
@@ -566,21 +585,21 @@ export function MusicQuiz() {
 
     return (
       <DynamicBackground className="flex min-h-screen flex-col items-center justify-center p-8 gap-4">
-        <Card className="w-full max-w-2xl border-2 neon-border-magenta bg-gradient-to-br from-gray-900 to-black">
-          <CardHeader className="text-center bg-gradient-to-r from-purple-900/30 via-pink-900/30 to-purple-900/30">
-            <CardTitle className="text-5xl font-black tracking-wider neon-text-magenta uppercase" style={{ fontFamily: 'Impact, Arial Black, sans-serif' }}>
+        <Card className="w-full max-w-2xl border-2 neon-border-magenta bg-gradient-to-br from-gray-900 to-black shadow-2xl">
+          <CardHeader className="text-center bg-gradient-to-r from-pink-900/30 via-fuchsia-900/30 to-pink-900/30 pb-8">
+            <CardTitle className="text-5xl font-black tracking-wider uppercase text-white" style={{ fontFamily: 'Impact, Arial Black, sans-serif', textShadow: '0 0 20px rgba(236, 72, 153, 0.8), 0 0 40px rgba(236, 72, 153, 0.5)' }}>
               🎶 FINAL SCORE 🎶
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="text-center p-8 bg-gradient-to-r from-yellow-500/20 via-orange-500/20 to-red-500/20 rounded-lg border-2 border-yellow-400/50">
+          <CardContent className="space-y-6 px-8 pb-8">
+            <div className="text-center p-8 bg-gradient-to-r from-pink-500/20 via-fuchsia-500/20 to-pink-500/20 rounded-lg border-2 border-pink-400/50">
               <p className="text-8xl font-black mb-4" style={{
-                background: 'linear-gradient(45deg, #FFFF00, #FF9900, #FF3366)',
+                background: 'linear-gradient(45deg, #ec4899, #d946ef, #c026d3)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
-                textShadow: '0 0 30px rgba(255, 255, 0, 0.5)'
+                filter: 'drop-shadow(0 0 30px rgba(236, 72, 153, 0.5))'
               }}>{score}%</p>
-              <p className="text-2xl font-bold text-cyan-300">
+              <p className="text-2xl font-bold text-white">
                 ✨ {correctCount} / {roundResults.length} HITS! ✨
               </p>
             </div>
@@ -596,10 +615,10 @@ export function MusicQuiz() {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <p className="font-bold text-lg text-white">{result.trackName}</p>
-                        <p className="text-sm text-cyan-300 font-semibold">{result.artist}</p>
+                        <p className="text-sm text-gray-300 font-semibold">{result.artist}</p>
                         <div className="mt-2 space-y-1">
-                          <p className="text-sm text-gray-300">
-                            <span className="font-bold text-yellow-300">🎤 Votre réponse:</span> {result.userAnswer}
+                          <p className="text-sm text-gray-200">
+                            <span className="font-bold text-pink-300">🎤 Votre réponse:</span> {result.userAnswer}
                           </p>
                           {!result.correct && (
                             <p className="text-sm text-green-400 font-semibold">
@@ -617,7 +636,7 @@ export function MusicQuiz() {
               ))}
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-3 pt-4">
               <Button 
                 onClick={() => setGameMode("setup")} 
                 className="flex-1 bg-gradient-to-r from-gray-700 to-gray-900 hover:from-gray-600 hover:to-gray-800 border-2 border-gray-500 text-white font-bold text-lg py-6"
@@ -626,7 +645,7 @@ export function MusicQuiz() {
               </Button>
               <Button 
                 onClick={startGame} 
-                className="flex-1 bg-gradient-to-r from-pink-500 via-red-500 to-fuchsia-500 hover:from-pink-600 hover:via-red-600 hover:to-fuchsia-600 border-2 border-pink-400 text-white font-black text-lg py-6 shadow-lg shadow-pink-500/50 hover:shadow-pink-500/80 hover:scale-105 transition-all duration-200"
+                className="flex-1 bg-gradient-to-r from-pink-500 via-fuchsia-500 to-pink-600 hover:from-pink-600 hover:via-fuchsia-600 hover:to-pink-700 border-2 border-pink-400 text-white font-black text-lg py-6 shadow-lg shadow-pink-500/50 hover:shadow-pink-500/80 hover:scale-105 transition-all duration-200"
               >
                 🎸 REJOUER!
               </Button>
@@ -640,28 +659,28 @@ export function MusicQuiz() {
   // Render playing/answering screen
   return (
     <DynamicBackground className="flex min-h-screen flex-col items-center justify-center p-8 gap-4">
-      <Card className="w-full max-w-2xl border-2 neon-border-cyan bg-gradient-to-br from-gray-900 to-black shadow-2xl shadow-cyan-500/30">
+      <Card className="w-full max-w-2xl border-2 neon-border-magenta bg-gradient-to-br from-gray-900 to-black shadow-2xl">
         <CardHeader>
-          <CardTitle>
+          <CardTitle className="text-white">
             Manche {currentTrackIndex + 1} / {gameTracks.length}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {currentTrack && gameTracks[currentTrackIndex] && (
             <>
-              <div className="flex items-center gap-4 p-4 rounded-lg bg-black/50 border-2 border-magenta-500/30">
+              <div className="flex items-center gap-4 p-4 rounded-lg bg-black/50 border-2 border-pink-500/30">
                 <div className="relative">
                   <Image
                     src={currentTrack.album.images[0]?.url}
                     alt={currentTrack.name}
                     width={80}
                     height={80}
-                    className="rounded border-2 border-cyan-400 shadow-lg shadow-cyan-400/50"
+                    className="rounded border-2 border-pink-400 shadow-lg shadow-pink-400/50"
                   />
                 </div>
                 <div className="flex-1">
                   <p className="font-bold text-xl text-white">{currentTrack.name}</p>
-                  <p className="text-cyan-300 font-semibold">
+                  <p className="text-gray-300 font-semibold">
                     {currentTrack.artists.map((a) => a.name).join(", ")}
                   </p>
                 </div>
@@ -673,8 +692,8 @@ export function MusicQuiz() {
                     className="h-full transition-all duration-300 rounded-full"
                     style={{
                       width: `${(position / duration) * 100}%`,
-                      background: `linear-gradient(90deg, #CCFF00 0%, #CCFF00 ${100 - (position / duration) * 100}%, #FFFF00 ${100 - (position / duration) * 100}%, #FF9900 ${100 - (position / duration) * 50}%, #FF3366 100%)`,
-                      boxShadow: '0 0 10px currentColor'
+                      background: `linear-gradient(90deg, #ec4899 0%, #d946ef 50%, #c026d3 100%)`,
+                      boxShadow: '0 0 10px rgba(236, 72, 153, 0.7)'
                     }}
                   />
                 </div>
@@ -682,8 +701,8 @@ export function MusicQuiz() {
 
               {/* Current Lyric Display */}
               {currentLyric && (gameMode === "playing" || gameMode === "revealing") && (
-                <div className="text-center p-6 bg-gradient-to-r from-purple-900/30 via-pink-900/30 to-purple-900/30 rounded-lg border-2 border-purple-500/50 shadow-lg shadow-purple-500/30">
-                  <p className="text-2xl font-bold text-white" style={{ textShadow: '0 0 10px rgba(255,255,255,0.5)' }}>{currentLyric.text}</p>
+                <div className="text-center p-6 bg-gradient-to-r from-pink-900/30 via-fuchsia-900/30 to-pink-900/30 rounded-lg border-2 border-pink-500/50 shadow-lg shadow-pink-500/30">
+                  <p className="text-2xl font-bold text-white" style={{ textShadow: '0 0 10px rgba(236, 72, 153, 0.5)' }}>{currentLyric.text}</p>
                 </div>
               )}
 
@@ -692,8 +711,8 @@ export function MusicQuiz() {
                 <div className="space-y-4">
                   <p className="text-center font-black text-3xl uppercase tracking-wider" style={{
                     fontFamily: 'Impact, Arial Black, sans-serif',
-                    color: gameMode === "answering" ? '#FFFF00' : '#00FF00',
-                    textShadow: gameMode === "answering" ? '0 0 20px #FFFF00, 0 0 40px #FF9900' : '0 0 20px #00FF00'
+                    color: gameMode === "answering" ? '#ec4899' : '#00FF00',
+                    textShadow: gameMode === "answering" ? '0 0 20px rgba(236, 72, 153, 0.8), 0 0 40px rgba(217, 70, 239, 0.5)' : '0 0 20px #00FF00'
                   }}>
                     {gameMode === "answering" 
                       ? `🎤 DROP THE LYRICS! (${timeLeft}s)`
@@ -716,7 +735,7 @@ export function MusicQuiz() {
                           buttonClasses += "bg-gray-800/50 text-gray-400 border-gray-600"
                         }
                       } else {
-                        buttonClasses += "bg-gradient-to-r from-gray-800 to-gray-900 hover:from-cyan-900 hover:to-purple-900 text-white border-gray-600 hover:border-cyan-400 hover:shadow-lg hover:shadow-cyan-400/50 hover:scale-105"
+                        buttonClasses += "bg-gradient-to-r from-gray-800 to-gray-900 hover:from-pink-900/50 hover:to-fuchsia-900/50 text-white border-gray-600 hover:border-pink-400 hover:shadow-lg hover:shadow-pink-400/50 hover:scale-105"
                       }
 
                       return (
@@ -727,7 +746,7 @@ export function MusicQuiz() {
                           disabled={gameMode === "revealing"}
                         >
                           <span className="flex items-center gap-2">
-                            <span className="text-cyan-400 font-black">{String.fromCharCode(65 + idx)}.</span>
+                            <span className="text-pink-400 font-black">{String.fromCharCode(65 + idx)}.</span>
                             {option}
                           </span>
                         </Button>
@@ -748,7 +767,7 @@ export function MusicQuiz() {
                           ? "bg-green-400 shadow-lg shadow-green-400/70"
                           : "bg-red-500 shadow-lg shadow-red-500/70"
                         : index === currentTrackIndex
-                        ? "bg-cyan-400 shadow-lg shadow-cyan-400/70 animate-pulse scale-125"
+                        ? "bg-pink-400 shadow-lg shadow-pink-400/70 animate-pulse scale-125"
                         : "bg-gray-600 shadow-inner"
                     }`}
                   />
