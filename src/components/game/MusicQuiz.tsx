@@ -123,11 +123,15 @@ export function MusicQuiz() {
 
     try {
       if (gameConfig.source === "playlist" && gameConfig.sourceId) {
-        const response = await fetch(`/api/spotify/playlist/${gameConfig.sourceId}`)
+        // Request more tracks than needed to ensure we get enough with lyrics
+        const tracksNeeded = validatedTrackCount * 3
+        const response = await fetch(`/api/spotify/playlist/${gameConfig.sourceId}?count=${tracksNeeded}`)
         const data = await response.json()
         tracks = data.items?.map((item: { track: SpotifyApi.TrackObjectFull }) => item.track).filter(Boolean) || []
       } else if (gameConfig.source === "liked") {
-        const response = await fetch("/api/spotify/liked")
+        // Request more tracks than needed to ensure we get enough with lyrics
+        const tracksNeeded = validatedTrackCount * 3
+        const response = await fetch(`/api/spotify/liked?count=${tracksNeeded}`)
         const data = await response.json()
         tracks = data.items?.map((item: { track: SpotifyApi.TrackObjectFull }) => item.track).filter(Boolean) || []
       } else if (gameConfig.source === "album" && gameConfig.sourceId) {
