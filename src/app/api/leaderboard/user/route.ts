@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { supabase } from '@/lib/supabase'
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { supabaseServer } from '@/lib/supabase-server'
 
 /**
  * GET /api/leaderboard/user
@@ -8,7 +9,7 @@ import { supabase } from '@/lib/supabase'
  */
 export async function GET() {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(authOptions)
     
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -17,7 +18,7 @@ export async function GET() {
     const userId = session.user.email || session.user.id || 'anonymous'
 
     // Get user's game sessions
-    const { data, error } = await supabase
+    const { data, error } = await supabaseServer
       .from('game_sessions')
       .select('score, total_questions, created_at')
       .eq('user_id', userId)

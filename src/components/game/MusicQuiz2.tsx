@@ -116,16 +116,16 @@ export function MusicQuiz() {
       // Fetch tracks based on source
       if (gameConfig.source === "playlist" && gameConfig.sourceId) {
         const tracksNeeded = validatedTrackCount * 3
-        const response = await fetch(`/api/spotify/playlist/${gameConfig.sourceId}?count=${tracksNeeded}`)
+        const response = await fetch(`/api/spotify/playlist/${gameConfig.sourceId}?count=${tracksNeeded}`, { signal: controller.signal })
         const data = await response.json()
         tracks = data.items?.map((item: { track: SpotifyApi.TrackObjectFull }) => item.track).filter(Boolean) || []
       } else if (gameConfig.source === "liked") {
         const tracksNeeded = validatedTrackCount * 3
-        const response = await fetch(`/api/spotify/liked?count=${tracksNeeded}`)
+        const response = await fetch(`/api/spotify/liked?count=${tracksNeeded}`, { signal: controller.signal })
         const data = await response.json()
         tracks = data.items?.map((item: { track: SpotifyApi.TrackObjectFull }) => item.track).filter(Boolean) || []
       } else if (gameConfig.source === "album" && gameConfig.sourceId) {
-        const response = await fetch(`/api/spotify/album/${gameConfig.sourceId}`)
+        const response = await fetch(`/api/spotify/album/${gameConfig.sourceId}`, { signal: controller.signal })
         const data = await response.json()
         tracks = data.items || []
       } else if (gameConfig.source === "random") {
@@ -158,6 +158,11 @@ export function MusicQuiz() {
       loadTrackForRound(0, gameTracks)
     } catch (error) {
       console.error("Failed to start game:", error)
+      // Don't show error if user cancelled
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('Loading cancelled by user')
+        return
+      }
       if (!controller.signal.aborted) {
         alert("Erreur lors du chargement des chansons")
       }
@@ -742,7 +747,7 @@ export function MusicQuiz() {
                   <div 
                     className="h-full transition-all duration-300 rounded-full"
                     style={{
-                      width: `${(position / duration) * 100}%`,
+                      width: `${duration > 0 ? (position / duration) * 100 : 0}%`,
                       background: `linear-gradient(90deg, #ec4899 0%, #d946ef 50%, #c026d3 100%)`,
                       boxShadow: '0 0 10px rgba(236, 72, 153, 0.7)'
                     }}

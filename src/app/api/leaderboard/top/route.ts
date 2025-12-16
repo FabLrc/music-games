@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabaseServer } from '@/lib/supabase-server'
 
 /**
  * GET /api/leaderboard/top
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const gameMode = searchParams.get('gameMode')
 
     // Build query
-    let query = supabase
+    let query = supabaseServer
       .from('game_sessions')
       .select('user_id, username, avatar_url, score, game_mode')
       .order('created_at', { ascending: false })

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { supabase } from '@/lib/supabase'
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+import { supabaseServer } from '@/lib/supabase-server'
 import type { GameSession } from '@/lib/supabase'
 
 /**
@@ -9,7 +10,7 @@ import type { GameSession } from '@/lib/supabase'
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(authOptions)
     
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert into Supabase
-    const { data, error } = await supabase
+    const { data, error } = await supabaseServer
       .from('game_sessions')
       .insert([gameSession])
       .select()
