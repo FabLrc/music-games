@@ -31,6 +31,12 @@ const GAME_MODES = [
     icon: "⚡",
     description: "Une seule vie, jusqu'où irez-vous ?",
   },
+  {
+    id: "karaoke" as GameModeType,
+    name: "KARAOKÉ",
+    icon: "🎙️",
+    description: "Chantez avec les paroles synchronisées",
+  },
 ]
 
 export function GameModeSelector({ selectedMode, onModeChange }: GameModeSelectorProps) {

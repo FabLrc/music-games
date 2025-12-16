@@ -4,7 +4,7 @@ import { LyricLine } from "@/lib/lrc-parser"
 export type QuestionType = "lyrics" | "title" | "artist" | "album"
 
 // Mode de jeu global
-export type GameModeType = "lyrics-quiz" | "blind-test-title" | "blind-test-artist" | "survival"
+export type GameModeType = "lyrics-quiz" | "blind-test-title" | "blind-test-artist" | "survival" | "karaoke"
 
 // Configuration de base pour tous les types de questions
 export interface BaseQuestion {

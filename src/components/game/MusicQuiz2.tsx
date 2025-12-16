@@ -13,6 +13,7 @@ import { Slider } from "@/components/ui/slider"
 import { DynamicBackground } from "@/components/DynamicBackground"
 import { Leaderboard } from "@/components/Leaderboard"
 import { GameModeSelector } from "@/components/game/GameModeSelector"
+import { Karaoke } from "@/components/game/Karaoke"
 import { addLocalSession } from "@/lib/leaderboard-storage"
 import { generateQuestions } from "@/lib/question-generator"
 import { getCurrentLyric } from "@/lib/lrc-parser"
@@ -317,6 +318,11 @@ export function MusicQuiz() {
 
   // Setup screen
   if (gameState === "setup") {
+    // Redirect to Karaoke component if karaoke mode is selected
+    if (gameConfig.gameMode === "karaoke") {
+      return <Karaoke onBack={() => setGameConfig({ ...gameConfig, gameMode: "lyrics-quiz" })} />
+    }
+
     return (
       <DynamicBackground className="flex min-h-screen flex-col items-center justify-center p-8 gap-4">
         <div className="absolute top-4 right-4 flex gap-2">
