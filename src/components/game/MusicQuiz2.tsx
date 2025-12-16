@@ -98,7 +98,9 @@ export function MusicQuiz() {
 
   // Start game
   const startGame = async () => {
-    const validatedTrackCount = Math.min(Math.max(1, gameConfig.trackCount || 5), MAX_TRACKS)
+    // En mode survival, permettre jusqu'à 50 pistes au lieu de 20
+    const maxTracks = gameConfig.gameMode === "survival" ? 50 : MAX_TRACKS
+    const validatedTrackCount = Math.min(Math.max(1, gameConfig.trackCount || 5), maxTracks)
     setGameConfig({ ...gameConfig, trackCount: validatedTrackCount })
 
     setIsLoading(true)
@@ -695,15 +697,22 @@ export function MusicQuiz() {
           {currentTrack && (
             <>
               <div className="flex items-center gap-4 p-4 rounded-lg bg-black/50 border-2 border-pink-500/30">
-                <div className="relative">
-                  <Image
-                    src={currentTrack.track.album.images[0]?.url}
-                    alt="Album cover"
-                    width={80}
-                    height={80}
-                    className="rounded border-2 border-pink-400 shadow-lg shadow-pink-400/50"
-                  />
-                </div>
+                {/* Masquer la couverture en mode blind test */}
+                {(currentTrack.question.type === "title" || currentTrack.question.type === "artist") ? (
+                  <div className="relative w-20 h-20 rounded border-2 border-gray-600 bg-gray-800 flex items-center justify-center">
+                    <span className="text-4xl">❓</span>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <Image
+                      src={currentTrack.track.album.images[0]?.url}
+                      alt="Album cover"
+                      width={80}
+                      height={80}
+                      className="rounded border-2 border-pink-400 shadow-lg shadow-pink-400/50"
+                    />
+                  </div>
+                )}
                 <div className="flex-1">
                   {/* Masquer le titre et l'artiste dans tous les modes blind test */}
                   {currentTrack.question.type === "title" || currentTrack.question.type === "artist" ? (
