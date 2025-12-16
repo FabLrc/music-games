@@ -12,6 +12,8 @@ import { Slider } from "@/components/ui/slider"
 import { getLyrics } from "@/lib/lrclib"
 import { parseLRC, getCurrentLyric, type LyricLine } from "@/lib/lrc-parser"
 import { DynamicBackground } from "@/components/DynamicBackground"
+import { Leaderboard } from "@/components/Leaderboard"
+import { addLocalSession } from "@/lib/leaderboard-storage"
 
 type GameMode = "setup" | "playing" | "answering" | "results" | "revealing"
 
@@ -74,6 +76,7 @@ export function MusicQuiz() {
   const [isLoading, setIsLoading] = useState(false)
   const [loadingProgress, setLoadingProgress] = useState({ current: 0, total: 0 })
   const [abortController, setAbortController] = useState<AbortController | null>(null)
+  const [showLeaderboard, setShowLeaderboard] = useState(false)
 
   const loadPlaylists = async () => {
     try {
@@ -366,6 +369,8 @@ export function MusicQuiz() {
       if (nextTrackIndex >= gameTracks.length) {
         pause()
         setGameMode("results")
+        // Save score
+        saveScore()
       } else {
         // Next track (already preloaded)
         setCurrentTrackIndex(nextTrackIndex)
@@ -400,15 +405,60 @@ export function MusicQuiz() {
     }
   }, [gameMode, submitAnswer])
 
+  // Save score to local storage and API
+  const saveScore = useCallback(async () => {
+    const correctCount = roundResults.filter((r) => r.correct).length
+    const totalQuestions = roundResults.length
+    
+    // Save locally
+    addLocalSession({
+      score: correctCount,
+      totalQuestions,
+      gameMode: "lyrics-quiz",
+      sourceType: gameConfig.source,
+    })
+
+    // Save to global leaderboard if logged in
+    if (session?.user) {
+      try {
+        await fetch("/api/leaderboard/submit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            score: correctCount,
+            totalQuestions,
+            gameMode: "lyrics-quiz",
+            sourceType: gameConfig.source,
+          }),
+        })
+      } catch (error) {
+        console.error("Failed to save score to global leaderboard:", error)
+      }
+    }
+  }, [roundResults, gameConfig, session])
+
   // Render setup screen
   if (gameMode === "setup") {
     return (
       <DynamicBackground className="flex min-h-screen flex-col items-center justify-center p-8 gap-4">
-        <div className="absolute top-4 right-4">
+        <div className="absolute top-4 right-4 flex gap-2">
+          <Button 
+            variant="ghost" 
+            onClick={() => setShowLeaderboard(!showLeaderboard)} 
+            className="text-white/70 hover:text-white hover:bg-white/10"
+          >
+            🏆 {showLeaderboard ? "JOUER" : "LEADERBOARD"}
+          </Button>
           <Button variant="ghost" onClick={() => signOut()} className="text-white/70 hover:text-white hover:bg-white/10">
             ⚡ SILENCE
           </Button>
         </div>
+
+        {showLeaderboard ? (
+          <div className="w-full max-w-4xl">
+            <Leaderboard />
+          </div>
+        ) : (
         <Card className="w-full max-w-2xl border-2 neon-border-magenta bg-gradient-to-br from-gray-900 to-black shadow-2xl">
           <CardHeader className="text-center pb-8">
             <CardTitle className="text-5xl font-black tracking-wider uppercase text-white mb-3" style={{ fontFamily: 'Impact, Arial Black, sans-serif', textShadow: '0 0 20px rgba(236, 72, 153, 0.8), 0 0 40px rgba(236, 72, 153, 0.5)' }}>
@@ -619,6 +669,7 @@ export function MusicQuiz() {
             )}
           </CardContent>
         </Card>
+        )}
       </DynamicBackground>
     )
   }
@@ -681,16 +732,25 @@ export function MusicQuiz() {
               ))}
             </div>
 
-            <div className="flex gap-3 pt-4">
+            <div className="grid grid-cols-3 gap-3 pt-4">
+              <Button 
+                onClick={() => {
+                  setShowLeaderboard(true)
+                  setGameMode("setup")
+                }} 
+                className="bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 border-2 border-yellow-500 text-white font-bold text-lg py-6"
+              >
+                🏆 LEADERBOARD
+              </Button>
               <Button 
                 onClick={() => setGameMode("setup")} 
-                className="flex-1 bg-gradient-to-r from-gray-700 to-gray-900 hover:from-gray-600 hover:to-gray-800 border-2 border-gray-500 text-white font-bold text-lg py-6"
+                className="bg-gradient-to-r from-gray-700 to-gray-900 hover:from-gray-600 hover:to-gray-800 border-2 border-gray-500 text-white font-bold text-lg py-6"
               >
-                🔄 NOUVELLE CONFIG
+                🔄 CONFIG
               </Button>
               <Button 
                 onClick={startGame} 
-                className="flex-1 bg-gradient-to-r from-pink-500 via-fuchsia-500 to-pink-600 hover:from-pink-600 hover:via-fuchsia-600 hover:to-pink-700 border-2 border-pink-400 text-white font-black text-lg py-6 shadow-lg shadow-pink-500/50 hover:shadow-pink-500/80 hover:scale-105 transition-all duration-200"
+                className="bg-gradient-to-r from-pink-500 via-fuchsia-500 to-pink-600 hover:from-pink-600 hover:via-fuchsia-600 hover:to-pink-700 border-2 border-pink-400 text-white font-black text-lg py-6 shadow-lg shadow-pink-500/50 hover:shadow-pink-500/80 hover:scale-105 transition-all duration-200"
               >
                 🎸 REJOUER!
               </Button>
