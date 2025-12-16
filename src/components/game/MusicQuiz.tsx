@@ -356,17 +356,11 @@ export function MusicQuiz() {
 
     setRoundResults([...roundResults, result])
     setGameMode("revealing")
+    
+    // Resume the CURRENT track to play the correct answer
     resume()
 
-    // Preload next track while showing the reveal
     const nextTrackIndex = currentTrackIndex + 1
-    if (nextTrackIndex < gameTracks.length) {
-      const nextTrack = gameTracks[nextTrackIndex]
-      // Preload in background (don't await)
-      play(nextTrack.track.uri).catch(err => {
-        console.warn("Failed to preload next track:", err)
-      })
-    }
 
     setTimeout(() => {
       // Check if game is over
@@ -376,17 +370,9 @@ export function MusicQuiz() {
         // Save score
         saveScore()
       } else {
-        // Next track (already preloaded)
+        // Load the next track
         setCurrentTrackIndex(nextTrackIndex)
-        const nextGameTrack = gameTracks[nextTrackIndex]
-        const seekTime = Math.max(0, (nextGameTrack.hiddenLyric.time - 5) * 1000)
-        
-        // Since track is preloaded, seek and start immediately
-        setTimeout(() => {
-          seek(seekTime)
-          setGameMode("playing")
-          setTimeLeft(10)
-        }, 100) // Minimal delay
+        loadTrackForRound(gameTracks[nextTrackIndex])
       }
     }, 5000)
   }, [gameTracks, currentTrackIndex, roundResults, play, resume, pause, seek])
