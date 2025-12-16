@@ -20,7 +20,7 @@ export default function Home() {
           <CardTitle className="text-5xl font-black tracking-wider uppercase mb-3 text-white" style={{ fontFamily: 'Impact, Arial Black, sans-serif', textShadow: '0 0 20px rgba(236, 72, 153, 0.8), 0 0 40px rgba(236, 72, 153, 0.5)' }}>
             🎵 MUSIC QUIZ 🎵
           </CardTitle>
-          <p className="text-gray-300 font-semibold text-lg mt-4">N'oubliez pas les paroles!</p>
+          <p className="text-gray-300 font-semibold text-lg mt-4">N&apos;oubliez pas les paroles!</p>
         </CardHeader>
         <CardContent className="flex flex-col gap-6 px-8 pb-8">
           <p className="text-sm text-gray-200 text-center font-medium">🎧 Connectez-vous avec Spotify pour commencer la fête! 🎧</p>

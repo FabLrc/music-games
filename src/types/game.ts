@@ -5,6 +5,7 @@ export type QuestionType = "lyrics" | "title" | "artist" | "album"
 
 // Mode de jeu global
 export type GameModeType = "lyrics-quiz" | "blind-test-title" | "blind-test-artist" | "survival" | "karaoke"
+export type GameMode = GameModeType
 
 // Configuration de base pour tous les types de questions
 export interface BaseQuestion {

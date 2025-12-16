@@ -11,10 +11,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Slider } from "@/components/ui/slider"
 import { DynamicBackground } from "@/components/DynamicBackground"
-import { Leaderboard } from "@/components/Leaderboard"
 import { GameModeSelector } from "@/components/game/GameModeSelector"
 import { Karaoke } from "@/components/game/Karaoke"
-import { addLocalSession } from "@/lib/leaderboard-storage"
 import { generateQuestions } from "@/lib/question-generator"
 import { getCurrentLyric } from "@/lib/lrc-parser"
 import { GameConfiguration, LyricsQuestion, TitleQuestion, ArtistQuestion } from "@/types/game"
@@ -53,7 +51,6 @@ export function MusicQuiz() {
   const [isLoading, setIsLoading] = useState(false)
   const [loadingProgress, setLoadingProgress] = useState({ current: 0, total: 0 })
   const [abortController, setAbortController] = useState<AbortController | null>(null)
-  const [showLeaderboard, setShowLeaderboard] = useState(false)
   const [timeLeft, setTimeLeft] = useState(10)
 
   // Game engine
@@ -300,25 +297,7 @@ export function MusicQuiz() {
     const correctCount = roundResults.filter((r) => r.correct).length
     const totalQuestions = roundResults.length
 
-    addLocalSession({
-      score: correctCount,
-      totalQuestions,
-      gameMode: gameConfig.gameMode,
-      sourceType: gameConfig.source,
-    })
-
-    if (session?.user) {
-      fetch("/api/leaderboard/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          score: correctCount,
-          totalQuestions,
-          gameMode: gameConfig.gameMode,
-          sourceType: gameConfig.source,
-        }),
-      }).catch((error) => console.error("Failed to save score:", error))
-    }
+    // Score is saved via the game engine callback
   }
 
   // Setup screen
@@ -330,24 +309,6 @@ export function MusicQuiz() {
 
     return (
       <DynamicBackground className="flex min-h-screen flex-col items-center justify-center p-8 gap-4">
-        <div className="absolute top-4 right-4 flex gap-2">
-          <Button 
-            variant="ghost" 
-            onClick={() => setShowLeaderboard(!showLeaderboard)} 
-            className="text-white/70 hover:text-white hover:bg-white/10"
-          >
-            🏆 {showLeaderboard ? "JOUER" : "LEADERBOARD"}
-          </Button>
-          <Button variant="ghost" onClick={() => signOut()} className="text-white/70 hover:text-white hover:bg-white/10">
-            ⚡ SILENCE
-          </Button>
-        </div>
-
-        {showLeaderboard ? (
-          <div className="w-full max-w-4xl">
-            <Leaderboard />
-          </div>
-        ) : (
           <Card className="w-full max-w-2xl border-2 neon-border-magenta bg-gradient-to-br from-gray-900 to-black shadow-2xl">
             <CardHeader className="text-center pb-8">
               <CardTitle className="text-5xl font-black tracking-wider uppercase text-white mb-3" style={{ fontFamily: 'Impact, Arial Black, sans-serif', textShadow: '0 0 20px rgba(236, 72, 153, 0.8), 0 0 40px rgba(236, 72, 153, 0.5)' }}>
@@ -570,7 +531,6 @@ export function MusicQuiz() {
               )}
             </CardContent>
           </Card>
-        )}
       </DynamicBackground>
     )
   }
@@ -644,17 +604,7 @@ export function MusicQuiz() {
               ))}
             </div>
 
-            <div className="grid grid-cols-3 gap-3 pt-4">
-              <Button 
-                onClick={() => {
-                  setShowLeaderboard(true)
-                  setGameState("setup")
-                  resetGame()
-                }} 
-                className="bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 border-2 border-yellow-500 text-white font-bold text-lg py-6"
-              >
-                🏆 LEADERBOARD
-              </Button>
+            <div className="grid grid-cols-2 gap-3 pt-4">
               <Button 
                 onClick={() => {
                   setGameState("setup")
