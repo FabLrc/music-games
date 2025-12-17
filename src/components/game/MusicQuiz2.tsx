@@ -185,6 +185,12 @@ export function MusicQuiz() {
 
     const gameTrack = tracks[index]
     
+    // Vérifier que le player est prêt avant de jouer
+    if (!isReady) {
+      alert("Le lecteur Spotify n'est pas encore prêt. Veuillez patienter...")
+      return
+    }
+    
     try {
       await play(gameTrack.track.uri)
 
@@ -206,9 +212,10 @@ export function MusicQuiz() {
       }, 200)
     } catch (error) {
       console.error("Failed to load track:", error)
-      alert(`Erreur lors du chargement de la piste: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue'
+      alert(`Erreur lors du chargement de la piste: ${errorMessage}\n\nAssurez-vous qu'un appareil Spotify est actif (ouvrez Spotify sur votre ordinateur ou téléphone).`)
     }
-  }, [gameTracks, play, seek])
+  }, [gameTracks, play, seek, isReady])
 
   // Compute current lyric (for lyrics mode)
   const currentLyric = useMemo(() => {

@@ -92,8 +92,20 @@ export function useSpotifyPlayer() {
 
   const play = useCallback(
     async (uri?: string, retries = 3) => {
-      if (!deviceId || !session?.accessToken) {
-        throw new Error("Device not ready or not authenticated")
+      if (!session?.accessToken) {
+        throw new Error("Not authenticated")
+      }
+
+      // Wait for device to be ready (up to 10 seconds)
+      if (!isReady || !deviceId) {
+        console.log("Waiting for Spotify device to be ready...")
+        const startTime = Date.now()
+        while ((!isReady || !deviceId) && Date.now() - startTime < 10000) {
+          await new Promise(resolve => setTimeout(resolve, 500))
+        }
+        if (!isReady || !deviceId) {
+          throw new Error("Spotify device not ready. Please refresh the page and try again.")
+        }
       }
 
       for (let attempt = 0; attempt < retries; attempt++) {
@@ -122,6 +134,30 @@ export function useSpotifyPlayer() {
             errorData = { error: { message: errorText } }
           }
 
+          // If "Device not found", try to transfer playback to our device
+          if (response.status === 404 && errorData.error?.reason === "NO_ACTIVE_DEVICE" && attempt < retries - 1) {
+            console.warn("No active device found, attempting to transfer playback...")
+            try {
+              await fetch("https://api.spotify.com/v1/me/player", {
+                method: "PUT",
+                body: JSON.stringify({
+                  device_ids: [deviceId],
+                  play: false,
+                }),
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${session.accessToken}`,
+                },
+              })
+              // Wait a bit for the transfer to complete
+              await new Promise(resolve => setTimeout(resolve, 1000))
+              // Retry the play command
+              continue
+            } catch (transferError) {
+              console.error("Failed to transfer playback:", transferError)
+            }
+          }
+
           // Retry on 502 Bad Gateway or 503 Service Unavailable
           if ((response.status === 502 || response.status === 503) && attempt < retries - 1) {
             console.warn(`Spotify API error (${response.status}), retrying... (attempt ${attempt + 1}/${retries})`)
@@ -146,7 +182,7 @@ export function useSpotifyPlayer() {
         }
       }
     },
-    [deviceId, session]
+    [deviceId, session, isReady]
   )
 
   const pause = useCallback(async () => {
