@@ -5,14 +5,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useMultiplayerRoom } from '@/hooks/useMultiplayerRoom';
 
-export default function ResultsPage({ params }: { params: { id: string } }) {
+export default function ResultsPage() {
+  const params = useParams();
+  const id = params.id as string;
   const router = useRouter();
-  const { lobbyState } = useMultiplayerRoom(params.id);
+  const { lobbyState } = useMultiplayerRoom(id);
   const [sortedPlayers, setSortedPlayers] = useState<any[]>([]);
 
   useEffect(() => {

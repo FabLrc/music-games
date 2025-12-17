@@ -4,6 +4,7 @@
 
 import { MultiplayerGame } from '@/components/multiplayer/MultiplayerGame';
 
-export default function GamePage({ params }: { params: { id: string } }) {
-  return <MultiplayerGame roomId={params.id} />;
+export default async function GamePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return <MultiplayerGame roomId={id} />;
 }
