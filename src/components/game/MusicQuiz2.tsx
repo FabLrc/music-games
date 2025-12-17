@@ -300,11 +300,31 @@ export function MusicQuiz() {
   }, [gameState, submitAnswer])
 
   // Save score
-  function saveScore() {
-    const correctCount = roundResults.filter((r) => r.correct).length
-    const totalQuestions = roundResults.length
+  async function saveScore(results: RoundResult[], stats: GameStats) {
+    if (!session?.user) return
 
-    // Score is saved via the game engine callback
+    try {
+      const response = await fetch("/api/leaderboard/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          score: stats.correctAnswers,
+          totalQuestions: stats.totalQuestions,
+          gameMode: gameConfig.gameMode,
+          sourceType: gameConfig.source,
+        }),
+      })
+
+      if (!response.ok) {
+        console.error("Failed to submit score:", await response.text())
+      } else {
+        console.log("Score submitted successfully!")
+      }
+    } catch (error) {
+      console.error("Error submitting score:", error)
+    }
   }
 
   // Setup screen
