@@ -21,11 +21,14 @@ export function useMultiplayerRoom(roomId?: string) {
   const [error, setError] = useState<string | null>(null);
   const [channel, setChannel] = useState<RealtimeChannel | null>(null);
 
-  // Fonction pour générer un code de salle
-  const generateRoomCode = async (): Promise<string> => {
-    const { data, error } = await supabase.rpc('generate_room_code');
-    if (error) throw error;
-    return data;
+  // Fonction pour générer un code de salle (Client-side)
+  const generateRoomCode = (): string => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let result = '';
+    for (let i = 0; i < 6; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
   };
 
   // Créer une salle
@@ -35,7 +38,7 @@ export function useMultiplayerRoom(roomId?: string) {
       setError(null);
 
       try {
-        const code = await generateRoomCode();
+        const code = generateRoomCode();
 
         // Créer la salle
         const { data: room, error: roomError } = await supabase

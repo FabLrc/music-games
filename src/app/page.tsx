@@ -3,14 +3,14 @@
 import { useSession, signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { MusicQuiz } from "@/components/game/MusicQuiz2"
+import { Dashboard } from "@/components/Dashboard"
 import { DynamicBackground } from "@/components/DynamicBackground"
 
 export default function Home() {
   const { data: session } = useSession()
 
   if (session) {
-    return <MusicQuiz />
+    return <Dashboard />
   }
 
   return (
