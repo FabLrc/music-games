@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { useSession } from "next-auth/react"
 import Image from "next/image"
 import { useSpotifyPlayer } from "@/hooks/useSpotifyPlayer"
@@ -41,6 +41,7 @@ export function MusicQuiz({ config, initialTracks, onExit }: MusicQuizProps) {
   const [loadingProgress, setLoadingProgress] = useState({ current: 0, total: 0 })
   const [abortController, setAbortController] = useState<AbortController | null>(null)
   const [timeLeft, setTimeLeft] = useState(10)
+  const hasStarted = useRef(false)
 
   // Game engine
   const {
@@ -171,7 +172,8 @@ export function MusicQuiz({ config, initialTracks, onExit }: MusicQuizProps) {
 
   // Start game on mount
   useEffect(() => {
-    if (isReady) {
+    if (isReady && !hasStarted.current) {
+        hasStarted.current = true
         startGame()
     }
   }, [isReady, startGame])
