@@ -55,9 +55,9 @@ export function useGameEngine({ onGameEnd }: UseGameEngineProps = {}) {
 
     // Créer le résultat du round
     const result: RoundResult = {
-      trackName: currentTrack.track.name,
-      artist: currentTrack.track.artists[0]?.name || "",
-      albumName: currentTrack.track.album.name,
+      trackName: currentTrack.track.name || "Titre inconnu",
+      artist: currentTrack.track.artists?.[0]?.name || "Artiste inconnu",
+      albumName: currentTrack.track.album?.name || "Album inconnu",
       correct: isCorrect,
       userAnswer: userAnswer || "(Temps écoulé)",
       correctAnswer: currentTrack.question.correctAnswer,

@@ -275,8 +275,14 @@ export function MusicQuiz() {
         pause()
         setGameState("results")
       } else {
+        // Masquer l'interface AVANT de charger la prochaine piste
+        pause()
+        setGameState("playing")
         nextTrack()
-        loadTrackForRound(currentTrackIndex + 1)
+        // Petit délai pour s'assurer que l'état est bien mis à jour
+        setTimeout(() => {
+          loadTrackForRound(currentTrackIndex + 1)
+        }, 100)
       }
     }, 5000)
   }, [currentTrack, engineSubmitAnswer, gameConfig.gameMode, resume, pause, nextTrack, currentTrackIndex, loadTrackForRound])
@@ -498,13 +504,19 @@ export function MusicQuiz() {
                                 }}
                               >
                                 <CardContent className="p-3 flex items-center gap-3">
-                                  <Image
-                                    src={track.album.images[2]?.url || track.album.images[0]?.url}
-                                    alt={track.album.name}
-                                    width={48}
-                                    height={48}
-                                    className="rounded"
-                                  />
+                                  {track.album?.images?.length > 0 ? (
+                                    <Image
+                                      src={track.album.images[2]?.url || track.album.images[0]?.url || ""}
+                                      alt={track.album.name}
+                                      width={48}
+                                      height={48}
+                                      className="rounded"
+                                    />
+                                  ) : (
+                                    <div className="w-12 h-12 rounded bg-gray-700 flex items-center justify-center">
+                                      <span className="text-xl">🎵</span>
+                                    </div>
+                                  )}
                                   <div className="flex-1">
                                     <p className="font-semibold">{track.album.name}</p>
                                     <p className="text-sm text-muted-foreground">
@@ -657,8 +669,9 @@ export function MusicQuiz() {
   // Playing/Answering screen
   const questionTypeLabel = currentTrack 
     ? currentTrack.question.type === "lyrics" ? "🎤 Paroles" 
-    : currentTrack.question.type === "title" ? "🎵 Titre"
-    : currentTrack.question.type === "artist" ? "🎸 Artiste"
+    : currentTrack.question.type === "title" ? "🎵 Devinez le Titre"
+    : currentTrack.question.type === "artist" ? "🎸 Devinez l'Artiste"
+    : currentTrack.question.type === "album" ? "💿 Devinez l'Album"
     : "Question"
     : ""
 
@@ -685,38 +698,54 @@ export function MusicQuiz() {
           {currentTrack && (
             <>
               <div className="flex items-center gap-4 p-4 rounded-lg bg-black/50 border-2 border-pink-500/30">
-                {/* Masquer la couverture en mode blind test */}
-                {(currentTrack.question.type === "title" || currentTrack.question.type === "artist") ? (
-                  <div className="relative w-20 h-20 rounded border-2 border-gray-600 bg-gray-800 flex items-center justify-center">
-                    <span className="text-4xl">❓</span>
-                  </div>
+                {/* Modes blind test : masquer uniquement l'information à deviner */}
+                {(currentTrack.question.type === "title" || currentTrack.question.type === "artist" || currentTrack.question.type === "album") && gameState !== "revealing" ? (
+                  <>
+                    {/* Toujours masquer la couverture en blind test (sinon trop facile) */}
+                    <div className="relative w-20 h-20 rounded border-2 border-gray-600 bg-gray-800 flex items-center justify-center">
+                      <span className="text-4xl">❓</span>
+                    </div>
+                    <div className="flex-1">
+                      {/* Masquer SEULEMENT l'information à deviner */}
+                      <p className="font-bold text-xl text-gray-500">
+                        {currentTrack.question.type === "title" || currentTrack.question.type === "album" 
+                          ? "🎵 ???" 
+                          : currentTrack.track.name
+                        }
+                      </p>
+                      <p className="text-gray-500 font-semibold">
+                        {currentTrack.question.type === "artist" 
+                          ? "🎸 ???" 
+                          : currentTrack.track.artists.map((a) => a.name).join(", ")
+                        }
+                      </p>
+                    </div>
+                  </>
                 ) : (
-                  <div className="relative">
-                    <Image
-                      src={currentTrack.track.album.images[0]?.url}
-                      alt="Album cover"
-                      width={80}
-                      height={80}
-                      className="rounded border-2 border-pink-400 shadow-lg shadow-pink-400/50"
-                    />
-                  </div>
-                )}
-                <div className="flex-1">
-                  {/* Masquer le titre et l'artiste dans tous les modes blind test */}
-                  {currentTrack.question.type === "title" || currentTrack.question.type === "artist" ? (
-                    <>
-                      <p className="font-bold text-xl text-gray-500">🎵 ???</p>
-                      <p className="text-gray-500 font-semibold">🎸 ???</p>
-                    </>
-                  ) : (
-                    <>
+                  <>
+                    <div className="relative">
+                      {currentTrack.track.album?.images?.[0]?.url ? (
+                        <Image
+                          src={currentTrack.track.album.images[0].url}
+                          alt="Album cover"
+                          width={80}
+                          height={80}
+                          className="rounded border-2 border-pink-400 shadow-lg shadow-pink-400/50"
+                        />
+                      ) : (
+                        <div className="w-20 h-20 rounded border-2 border-pink-400 bg-gradient-to-br from-pink-900/50 to-fuchsia-900/50 flex items-center justify-center">
+                          <span className="text-3xl">🎵</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1">
                       <p className="font-bold text-xl text-white">{currentTrack.track.name}</p>
                       <p className="text-gray-300 font-semibold">
-                        {currentTrack.track.artists.map((a) => a.name).join(", ")}
+                        {currentTrack.track.artists?.map((a) => a.name).join(", ") || "Artiste inconnu"}
                       </p>
-                    </>
-                  )}
-                </div>
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="relative">

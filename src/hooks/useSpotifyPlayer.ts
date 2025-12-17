@@ -70,11 +70,18 @@ export function useSpotifyPlayer() {
 
   // Update position every 100ms when playing
   useEffect(() => {
-    if (!isPaused && player) {
+    if (!isPaused && player && isReady) {
       intervalRef.current = setInterval(async () => {
-        const state = await player.getCurrentState()
-        if (state) {
-          setPosition(state.position)
+        try {
+          if (player && playerRef.current) {
+            const state = await player.getCurrentState()
+            if (state) {
+              setPosition(state.position)
+            }
+          }
+        } catch (error) {
+          // Silently ignore errors during state polling
+          console.debug('Error getting player state:', error)
         }
       }, 100)
     } else {
@@ -88,7 +95,7 @@ export function useSpotifyPlayer() {
         clearInterval(intervalRef.current)
       }
     }
-  }, [isPaused, player])
+  }, [isPaused, player, isReady])
 
   const play = useCallback(
     async (uri?: string, retries = 3) => {
@@ -186,24 +193,38 @@ export function useSpotifyPlayer() {
   )
 
   const pause = useCallback(async () => {
-    if (player) {
-      await player.pause()
+    try {
+      if (player && playerRef.current && isReady) {
+        await player.pause()
+      }
+    } catch (error) {
+      console.error('Error pausing player:', error)
     }
-  }, [player])
+  }, [player, isReady])
 
   const resume = useCallback(async () => {
-    if (player) {
-      await player.resume()
+    try {
+      if (player && playerRef.current && isReady) {
+        await player.resume()
+      }
+    } catch (error) {
+      console.error('Error resuming player:', error)
     }
-  }, [player])
+  }, [player, isReady])
 
   const seek = useCallback(
     async (positionMs: number) => {
-      if (player) {
-        await player.seek(positionMs)
+      try {
+        if (player && playerRef.current && isReady) {
+          await player.seek(positionMs)
+        } else {
+          console.warn('Cannot seek: player not ready')
+        }
+      } catch (error) {
+        console.error('Error seeking:', error)
       }
     },
-    [player]
+    [player, isReady]
   )
 
   return {
