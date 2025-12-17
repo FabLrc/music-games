@@ -5,14 +5,17 @@ import { useSession } from "next-auth/react"
 import Image from "next/image"
 import { useSpotifyPlayer } from "@/hooks/useSpotifyPlayer"
 import { useGameEngine } from "@/hooks/useGameEngine"
+import { usePlayerProgress } from "@/hooks/usePlayerProgress"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { DynamicBackground } from "@/components/DynamicBackground"
 import { Karaoke } from "@/components/game/Karaoke"
+import { XPReward } from "@/components/XPReward"
 import { generateQuestions } from "@/lib/question-generator"
 import { getCurrentLyric } from "@/lib/lrc-parser"
 import { GameConfiguration, LyricsQuestion, TitleQuestion, ArtistQuestion, RoundResult, GameStats } from "@/types/game"
+import { XPGain } from "@/lib/player-progress"
 
 type GameState = "loading" | "playing" | "answering" | "results" | "revealing"
 
@@ -36,11 +39,14 @@ export function MusicQuiz({ config, initialTracks, onExit }: MusicQuizProps) {
     resume,
     seek,
   } = useSpotifyPlayer()
+  const { earnXP } = usePlayerProgress()
 
   const [gameState, setGameState] = useState<GameState>("loading")
   const [loadingProgress, setLoadingProgress] = useState({ current: 0, total: 0 })
   const [abortController, setAbortController] = useState<AbortController | null>(null)
   const [timeLeft, setTimeLeft] = useState(10)
+  const [xpGain, setXpGain] = useState<XPGain | null>(null)
+  const [showXPReward, setShowXPReward] = useState(false)
   const hasStarted = useRef(false)
 
   // Game engine
@@ -270,6 +276,7 @@ export function MusicQuiz({ config, initialTracks, onExit }: MusicQuizProps) {
     if (!session?.user) return
 
     try {
+      // Soumettre le score au leaderboard
       const response = await fetch("/api/leaderboard/submit", {
         method: "POST",
         headers: {
@@ -288,6 +295,16 @@ export function MusicQuiz({ config, initialTracks, onExit }: MusicQuizProps) {
       } else {
         console.log("Score submitted successfully!")
       }
+
+      // Gagner de l'XP en fonction des bonnes réponses
+      const gain = await earnXP(stats.correctAnswers)
+      if (gain) {
+        setXpGain(gain)
+        // Afficher la récompense XP après un court délai
+        setTimeout(() => {
+          setShowXPReward(true)
+        }, 1000)
+      }
     } catch (error) {
       console.error("Error submitting score:", error)
     }
@@ -296,8 +313,8 @@ export function MusicQuiz({ config, initialTracks, onExit }: MusicQuizProps) {
   // Loading screen
   if (gameState === "loading") {
     return (
-      <DynamicBackground className="flex min-h-screen flex-col items-center justify-center p-8 gap-4">
-        <Card className="w-full max-w-md border-2 neon-border-magenta bg-gradient-to-br from-gray-900 to-black shadow-2xl">
+      <DynamicBackground className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-8 gap-4">
+        <Card className="w-full min-w-[320px] max-w-md border-2 neon-border-magenta bg-gradient-to-br from-gray-900 to-black shadow-2xl">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold text-white">Préparation de la partie</CardTitle>
           </CardHeader>
@@ -332,8 +349,8 @@ export function MusicQuiz({ config, initialTracks, onExit }: MusicQuizProps) {
       : 0
 
     return (
-      <DynamicBackground className="flex min-h-screen flex-col items-center justify-center p-8 gap-4">
-        <Card className="w-full max-w-2xl border-2 neon-border-magenta bg-gradient-to-br from-gray-900 to-black shadow-2xl">
+      <DynamicBackground className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-8 gap-4">
+        <Card className="w-full min-w-[320px] max-w-2xl border-2 neon-border-magenta bg-gradient-to-br from-gray-900 to-black shadow-2xl">
           <CardHeader className="text-center bg-gradient-to-r from-pink-900/30 via-fuchsia-900/30 to-pink-900/30 pb-8">
             <CardTitle className="text-5xl font-black tracking-wider uppercase text-white" style={{ fontFamily: 'Impact, Arial Black, sans-serif', textShadow: '0 0 20px rgba(236, 72, 153, 0.8), 0 0 40px rgba(236, 72, 153, 0.5)' }}>
               🎶 FINAL SCORE 🎶
@@ -410,6 +427,13 @@ export function MusicQuiz({ config, initialTracks, onExit }: MusicQuizProps) {
             </div>
           </CardContent>
         </Card>
+        
+        {/* XP Reward Popup */}
+        <XPReward 
+          xpGain={xpGain} 
+          show={showXPReward}
+          onClose={() => setShowXPReward(false)}
+        />
       </DynamicBackground>
     )
   }
@@ -424,8 +448,8 @@ export function MusicQuiz({ config, initialTracks, onExit }: MusicQuizProps) {
     : ""
 
   return (
-    <DynamicBackground className="flex min-h-screen flex-col items-center justify-center p-8 gap-4">
-      <Card className="w-full max-w-2xl border-2 neon-border-magenta bg-gradient-to-br from-gray-900 to-black shadow-2xl">
+    <DynamicBackground className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-8 gap-4">
+      <Card className="w-full min-w-[320px] max-w-2xl border-2 neon-border-magenta bg-gradient-to-br from-gray-900 to-black shadow-2xl">
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle className="text-white">
@@ -445,23 +469,23 @@ export function MusicQuiz({ config, initialTracks, onExit }: MusicQuizProps) {
         <CardContent className="space-y-4">
           {currentTrack && (
             <>
-              <div className="flex items-center gap-4 p-4 rounded-lg bg-black/50 border-2 border-pink-500/30">
+              <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg bg-black/50 border-2 border-pink-500/30">
                 {/* Modes blind test : masquer uniquement l'information à deviner */}
                 {(currentTrack.question.type === "title" || currentTrack.question.type === "artist" || currentTrack.question.type === "album") && gameState !== "revealing" ? (
                   <>
                     {/* Toujours masquer la couverture en blind test (sinon trop facile) */}
-                    <div className="relative w-20 h-20 rounded border-2 border-gray-600 bg-gray-800 flex items-center justify-center">
-                      <span className="text-4xl">❓</span>
+                    <div className="relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 rounded border-2 border-gray-600 bg-gray-800 flex items-center justify-center">
+                      <span className="text-3xl sm:text-4xl">❓</span>
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       {/* Masquer SEULEMENT l'information à deviner */}
-                      <p className="font-bold text-xl text-gray-500">
+                      <p className="font-bold text-lg sm:text-xl text-gray-500 truncate">
                         {currentTrack.question.type === "title" || currentTrack.question.type === "album" 
                           ? "🎵 ???" 
                           : currentTrack.track.name
                         }
                       </p>
-                      <p className="text-gray-500 font-semibold">
+                      <p className="text-gray-500 font-semibold text-sm sm:text-base truncate">
                         {currentTrack.question.type === "artist" 
                           ? "🎸 ???" 
                           : currentTrack.track.artists.map((a) => a.name).join(", ")
@@ -471,24 +495,24 @@ export function MusicQuiz({ config, initialTracks, onExit }: MusicQuizProps) {
                   </>
                 ) : (
                   <>
-                    <div className="relative">
+                    <div className="relative flex-shrink-0">
                       {currentTrack.track.album?.images?.[0]?.url ? (
                         <Image
                           src={currentTrack.track.album.images[0].url}
                           alt="Album cover"
                           width={80}
                           height={80}
-                          className="rounded border-2 border-pink-400 shadow-lg shadow-pink-400/50"
+                          className="w-16 h-16 sm:w-20 sm:h-20 rounded border-2 border-pink-400 shadow-lg shadow-pink-400/50"
                         />
                       ) : (
-                        <div className="w-20 h-20 rounded border-2 border-pink-400 bg-gradient-to-br from-pink-900/50 to-fuchsia-900/50 flex items-center justify-center">
-                          <span className="text-3xl">🎵</span>
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded border-2 border-pink-400 bg-gradient-to-br from-pink-900/50 to-fuchsia-900/50 flex items-center justify-center">
+                          <span className="text-2xl sm:text-3xl">🎵</span>
                         </div>
                       )}
                     </div>
-                    <div className="flex-1">
-                      <p className="font-bold text-xl text-white">{currentTrack.track.name}</p>
-                      <p className="text-gray-300 font-semibold">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-lg sm:text-xl text-white truncate">{currentTrack.track.name}</p>
+                      <p className="text-gray-300 font-semibold text-sm sm:text-base truncate">
                         {currentTrack.track.artists?.map((a) => a.name).join(", ") || "Artiste inconnu"}
                       </p>
                     </div>
@@ -511,15 +535,15 @@ export function MusicQuiz({ config, initialTracks, onExit }: MusicQuizProps) {
 
               {/* Current Lyric Display (lyrics mode only) */}
               {currentLyric && (gameState === "playing" || gameState === "revealing") && (
-                <div className="text-center p-6 bg-gradient-to-r from-pink-900/30 via-fuchsia-900/30 to-pink-900/30 rounded-lg border-2 border-pink-500/50 shadow-lg shadow-pink-500/30">
-                  <p className="text-2xl font-bold text-white" style={{ textShadow: '0 0 10px rgba(236, 72, 153, 0.5)' }}>{currentLyric.text}</p>
+                <div className="text-center p-4 sm:p-6 bg-gradient-to-r from-pink-900/30 via-fuchsia-900/30 to-pink-900/30 rounded-lg border-2 border-pink-500/50 shadow-lg shadow-pink-500/30">
+                  <p className="text-xl sm:text-2xl font-bold text-white break-words" style={{ textShadow: '0 0 10px rgba(236, 72, 153, 0.5)' }}>{currentLyric.text}</p>
                 </div>
               )}
 
               {/* Answering mode */}
               {(gameState === "answering" || gameState === "revealing") && (
                 <div className="space-y-4">
-                  <p className="text-center font-black text-3xl uppercase tracking-wider" style={{
+                  <p className="text-center font-black text-2xl sm:text-3xl uppercase tracking-wider" style={{
                     fontFamily: 'Impact, Arial Black, sans-serif',
                     color: gameState === "answering" ? '#ec4899' : '#00FF00',
                     textShadow: gameState === "answering" ? '0 0 20px rgba(236, 72, 153, 0.8), 0 0 40px rgba(217, 70, 239, 0.5)' : '0 0 20px #00FF00'
@@ -529,9 +553,9 @@ export function MusicQuiz({ config, initialTracks, onExit }: MusicQuizProps) {
                       : "✨ RÉSULTAT"
                     }
                   </p>
-                  <div className="grid grid-cols-1 gap-3">
+                  <div className="grid grid-cols-1 gap-2 sm:gap-3">
                     {currentTrack.question.options.map((option, idx) => {
-                      let buttonClasses = "w-full text-left justify-start h-auto py-4 px-6 whitespace-normal font-bold text-lg transition-all duration-200 border-2 "
+                      let buttonClasses = "w-full text-left justify-start h-auto py-3 px-4 sm:py-4 sm:px-6 whitespace-normal font-bold text-base sm:text-lg transition-all duration-200 border-2 "
                       
                       if (gameState === "revealing") {
                         const isCorrect = option === currentTrack.question.correctAnswer

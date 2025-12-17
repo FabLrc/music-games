@@ -110,11 +110,22 @@ Rendre l'expérience plus satisfaisante visuellement.
 - [ ] **Visualisation Audio Réelle (Expérimental)**
     - Ajouter une option pour utiliser le microphone du navigateur pour capturer l'audio système (si l'utilisateur joue sur enceintes) et animer le background avec de vraies données FFT.
 
-## Phase 5 : Social & Progression
-- [ ] **Système de Progression**
-    - Niveaux de compte avec expérience (XP).
-    - Gain d'XP en fonction des performances de jeu (score, combo, mode de difficulté).
-    - Paliers de niveaux débloquant des récompenses.
+## Phase 5 : Social & Progression 🚧 EN COURS
+- [x] **Système de Progression** ✅ IMPLÉMENTÉ
+    - ✅ Niveaux de compte avec expérience (XP).
+    - ✅ Gain d'XP en fonction des performances de jeu (+10 XP par bonne réponse).
+    - ✅ Formule de progression : Niveau 1→2 = 100 XP, puis multiplication par 1.2 à chaque niveau.
+    - ✅ Affichage du niveau et XP dans la navbar avec avatar progressif.
+    - ✅ Popup de récompense XP en fin de partie avec animation.
+    - ✅ Table Supabase `player_progress` pour stocker la progression.
+    - ✅ Fichiers créés :
+        - `/src/lib/player-progress.ts` : Utilitaires de calcul XP/niveau
+        - `/src/hooks/usePlayerProgress.ts` : Hook React pour la progression
+        - `/src/components/PlayerAvatar.tsx` : Avatar avec cercle de progression
+        - `/src/components/XPReward.tsx` : Popup de récompense XP
+        - `/supabase/player-progress.sql` : Schéma de base de données
+        - `/CHANGELOG_XP_SYSTEM.md` : Documentation du système
+    - ⏳ Paliers de niveaux débloquant des récompenses (à venir).
 
 - [ ] **Quêtes & Défis**
     - Quêtes quotidiennes (ex: "Jouer 5 parties en mode Survie").

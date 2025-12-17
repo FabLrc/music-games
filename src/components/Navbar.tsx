@@ -7,16 +7,17 @@
 import { useSession, signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { useRouter, usePathname } from 'next/navigation';
-import Image from 'next/image';
+import { PlayerAvatar } from '@/components/PlayerAvatar';
+import { usePlayerProgress } from '@/hooks/usePlayerProgress';
 
 export function Navbar() {
   const { data: session } = useSession();
   const router = useRouter();
   const pathname = usePathname();
+  const { progress, levelInfo } = usePlayerProgress();
 
   const navItems = [
-    { label: 'Solo', path: '/' },
-    { label: 'Multijoueur', path: '/multiplayer' },
+    { label: 'Jouer', path: '/' },
     { label: 'Karaoké', path: '/karaoke' },
     { label: 'Classement', path: '/leaderboard' },
   ];
@@ -55,20 +56,25 @@ export function Navbar() {
 
           {/* Profil Utilisateur */}
           <div className="flex items-center gap-3">
-            {session.user?.image && (
-              <Image
-                src={session.user.image}
-                alt={session.user.name || 'User'}
-                width={40}
-                height={40}
-                className="rounded-full border-2 border-pink-400"
-              />
-            )}
+            <PlayerAvatar
+              imageUrl={session.user?.image || undefined}
+              username={session.user?.name || 'User'}
+              level={progress?.level || 1}
+              levelInfo={levelInfo || undefined}
+              size={48}
+            />
             <div className="hidden lg:block text-right">
               <p className="text-sm font-semibold text-white">
                 {session.user?.name}
               </p>
-              <p className="text-xs text-gray-300">Spotify</p>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-gray-300">Niveau {progress?.level || 1}</span>
+                {levelInfo && (
+                  <span className="text-pink-400 font-semibold">
+                    {levelInfo.currentXP}/{levelInfo.xpForNextLevel} XP
+                  </span>
+                )}
+              </div>
             </div>
             <Button
               variant="ghost"

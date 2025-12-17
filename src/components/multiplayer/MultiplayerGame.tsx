@@ -8,6 +8,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useMultiplayerRoom } from '@/hooks/useMultiplayerRoom';
+import { usePlayerProgress } from '@/hooks/usePlayerProgress';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -28,6 +29,7 @@ export function MultiplayerGame({ roomId }: MultiplayerGameProps) {
   const { data: session } = useSession();
   const router = useRouter();
   const { lobbyState, broadcastGameEvent } = useMultiplayerRoom(roomId);
+  const { earnXP } = usePlayerProgress();
   const [currentQuestion, setCurrentQuestion] = useState<SimpleQuestion | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
@@ -77,7 +79,7 @@ export function MultiplayerGame({ roomId }: MultiplayerGameProps) {
 
       // Le host passe à la question suivante après un délai
       if (isHost) {
-        setTimeout(() => {
+        setTimeout(async () => {
           if (currentQuestionIndex < 9) {
             const nextEvent: GameEvent = {
               type: 'next_track',
@@ -96,6 +98,10 @@ export function MultiplayerGame({ roomId }: MultiplayerGameProps) {
               final_scores: finalScoresArray,
             };
             broadcastGameEvent(endEvent);
+            
+            // Gagner de l'XP pour le score final
+            await earnXP(score);
+            
             router.push(`/multiplayer/results/${roomId}`);
           }
         }, 3000);
