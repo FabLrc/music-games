@@ -73,18 +73,19 @@ CREATE POLICY "Anyone can read lyrics cache"
   FOR SELECT
   USING (true);
 
--- Politique : Seuls les utilisateurs authentifiés peuvent insérer/mettre à jour
-DROP POLICY IF EXISTS "Authenticated users can insert lyrics" ON lyrics_cache;
-CREATE POLICY "Authenticated users can insert lyrics"
+-- Politique : Tout le monde peut insérer/mettre à jour (les paroles sont publiques)
+DROP POLICY IF EXISTS "Anyone can insert lyrics" ON lyrics_cache;
+CREATE POLICY "Anyone can insert lyrics"
   ON lyrics_cache
   FOR INSERT
   WITH CHECK (true);
 
-DROP POLICY IF EXISTS "Authenticated users can update lyrics" ON lyrics_cache;
-CREATE POLICY "Authenticated users can update lyrics"
+DROP POLICY IF EXISTS "Anyone can update lyrics" ON lyrics_cache;
+CREATE POLICY "Anyone can update lyrics"
   ON lyrics_cache
   FOR UPDATE
-  USING (true);
+  USING (true)
+  WITH CHECK (true);
 
 -- Fonction pour mettre à jour automatiquement updated_at
 CREATE OR REPLACE FUNCTION update_lyrics_cache_updated_at()

@@ -15,7 +15,7 @@ import { GameModeSelector } from "@/components/game/GameModeSelector"
 import { Karaoke } from "@/components/game/Karaoke"
 import { generateQuestions } from "@/lib/question-generator"
 import { getCurrentLyric } from "@/lib/lrc-parser"
-import { GameConfiguration, LyricsQuestion, TitleQuestion, ArtistQuestion } from "@/types/game"
+import { GameConfiguration, LyricsQuestion, TitleQuestion, ArtistQuestion, RoundResult, GameStats } from "@/types/game"
 
 type GameState = "setup" | "playing" | "answering" | "results" | "revealing"
 
