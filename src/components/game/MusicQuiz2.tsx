@@ -71,9 +71,18 @@ export function MusicQuiz({ config, initialTracks, onExit }: MusicQuizProps) {
 
     const gameTrack = tracks[index]
     
+    // Wait for player to be ready (up to 10 seconds)
     if (!isReady) {
-      console.warn("Player not ready yet")
-      return
+      console.log("Waiting for Spotify player to be ready...")
+      const startTime = Date.now()
+      while (!isReady && Date.now() - startTime < 10000) {
+        await new Promise(resolve => setTimeout(resolve, 500))
+      }
+      if (!isReady) {
+        console.error("Player not ready after timeout")
+        alert("Le lecteur Spotify n'est pas prêt. Veuillez rafraîchir la page.")
+        return
+      }
     }
     
     try {
@@ -90,8 +99,9 @@ export function MusicQuiz({ config, initialTracks, onExit }: MusicQuizProps) {
         seekTime = blindTestQuestion.startTime * 1000
       }
 
-      setTimeout(() => {
-        seek(seekTime)
+      // Wait a bit for track to start before seeking
+      setTimeout(async () => {
+        await seek(seekTime)
         
         // Pour le blind test, on affiche les réponses directement
         if (gameTrack.question.type === "title" || gameTrack.question.type === "artist") {
@@ -108,7 +118,7 @@ export function MusicQuiz({ config, initialTracks, onExit }: MusicQuizProps) {
       const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue'
       alert(`Erreur lors du chargement de la piste: ${errorMessage}\n\nAssurez-vous qu'un appareil Spotify est actif.`)
     }
-  }, [gameTracks, play, seek, isReady])
+  }, [gameTracks, play, seek, isReady, config.timeLimit, config.gameMode, startAnswerTimer])
 
   // Start game
   const startGame = useCallback(async () => {

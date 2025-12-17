@@ -194,9 +194,11 @@ export function useSpotifyPlayer() {
 
   const pause = useCallback(async () => {
     try {
-      if (player && playerRef.current && isReady) {
-        await player.pause()
+      if (!player || !playerRef.current || !isReady) {
+        console.warn('Cannot pause: player not ready')
+        return
       }
+      await player.pause()
     } catch (error) {
       console.error('Error pausing player:', error)
     }
@@ -204,9 +206,11 @@ export function useSpotifyPlayer() {
 
   const resume = useCallback(async () => {
     try {
-      if (player && playerRef.current && isReady) {
-        await player.resume()
+      if (!player || !playerRef.current || !isReady) {
+        console.warn('Cannot resume: player not ready')
+        return
       }
+      await player.resume()
     } catch (error) {
       console.error('Error resuming player:', error)
     }
@@ -215,11 +219,11 @@ export function useSpotifyPlayer() {
   const seek = useCallback(
     async (positionMs: number) => {
       try {
-        if (player && playerRef.current && isReady) {
-          await player.seek(positionMs)
-        } else {
+        if (!player || !playerRef.current || !isReady) {
           console.warn('Cannot seek: player not ready')
+          return
         }
+        await player.seek(positionMs)
       } catch (error) {
         console.error('Error seeking:', error)
       }
