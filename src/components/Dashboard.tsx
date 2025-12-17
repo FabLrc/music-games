@@ -73,21 +73,11 @@ export function Dashboard() {
     <DynamicBackground className="flex min-h-screen flex-col p-4 md:p-8">
       <div className="w-full max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <header className="flex justify-between items-center bg-black/40 p-6 rounded-xl border border-white/10 backdrop-blur-md">
-          <div>
-            <h1 className="text-4xl font-black tracking-wider uppercase text-white mb-1" style={{ fontFamily: 'Impact, Arial Black, sans-serif', textShadow: '0 0 20px rgba(236, 72, 153, 0.8)' }}>
-              MUSIC GAMES
-            </h1>
-            {session?.user?.name && (
-              <p className="text-gray-300 font-medium">
-                👋 Bienvenue, {session.user.name}
-              </p>
-            )}
-          </div>
-          <Button variant="ghost" onClick={() => signOut()} className="text-gray-400 hover:text-white">
-            Déconnexion
-          </Button>
-        </header>
+        <div className="flex items-center justify-start py-4">
+          <h2 className="text-3xl font-bold text-white">
+            Bienvenue, {session?.user?.name} 👋
+          </h2>
+        </div>
 
         {/* Main Content */}
         <Tabs defaultValue="solo" value={activeTab} onValueChange={(v) => setActiveTab(v as "solo" | "multiplayer")} className="w-full">
@@ -174,7 +164,7 @@ export function Dashboard() {
                         onClick={() => setGameConfig({ ...gameConfig, source: "random", sourceId: undefined })}
                         className={gameConfig.source === "random" 
                           ? "bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white font-bold border-2 border-pink-400 shadow-lg shadow-pink-500/50 py-6" 
-                          : "border-2 border-gray-600 bg-transparent text-white font-semibold py-6 hover:bg-gray-800/50"}
+                          : "border-2 border-gray-600 bg-transparent text-white font-semibold py-6 hover:bg-pink-500/20 hover:border-pink-500/60 hover:shadow-lg hover:shadow-pink-500/30 transition-all"}
                       >
                         🎲 ALÉATOIRE
                       </Button>
@@ -183,7 +173,7 @@ export function Dashboard() {
                         onClick={() => setGameConfig({ ...gameConfig, source: "liked", sourceId: undefined })}
                         className={gameConfig.source === "liked" 
                           ? "bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white font-bold border-2 border-pink-400 shadow-lg shadow-pink-500/50 py-6" 
-                          : "border-2 border-gray-600 bg-transparent text-white font-semibold py-6 hover:bg-gray-800/50"}
+                          : "border-2 border-gray-600 bg-transparent text-white font-semibold py-6 hover:bg-pink-500/20 hover:border-pink-500/60 hover:shadow-lg hover:shadow-pink-500/30 transition-all"}
                       >
                         ❤️ LIKÉS
                       </Button>
@@ -192,7 +182,7 @@ export function Dashboard() {
                         onClick={() => setGameConfig({ ...gameConfig, source: "playlist", sourceId: undefined })}
                         className={gameConfig.source === "playlist" 
                           ? "bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white font-bold border-2 border-pink-400 shadow-lg shadow-pink-500/50 py-6" 
-                          : "border-2 border-gray-600 bg-transparent text-white font-semibold py-6 hover:bg-gray-800/50"}
+                          : "border-2 border-gray-600 bg-transparent text-white font-semibold py-6 hover:bg-pink-500/20 hover:border-pink-500/60 hover:shadow-lg hover:shadow-pink-500/30 transition-all"}
                       >
                         📜 PLAYLIST
                       </Button>
@@ -201,7 +191,7 @@ export function Dashboard() {
                         onClick={() => setGameConfig({ ...gameConfig, source: "album", sourceId: undefined })}
                         className={gameConfig.source === "album" 
                           ? "bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white font-bold border-2 border-pink-400 shadow-lg shadow-pink-500/50 py-6" 
-                          : "border-2 border-gray-600 bg-transparent text-white font-semibold py-6 hover:bg-gray-800/50"}
+                          : "border-2 border-gray-600 bg-transparent text-white font-semibold py-6 hover:bg-pink-500/20 hover:border-pink-500/60 hover:shadow-lg hover:shadow-pink-500/30 transition-all"}
                       >
                         💽 ALBUM
                       </Button>
@@ -215,7 +205,7 @@ export function Dashboard() {
                           {playlists.map((playlist) => (
                             <Card
                               key={playlist.id}
-                              className={`cursor-pointer transition-all border-0 ${selectedPlaylist === playlist.id ? "bg-pink-900/40 ring-2 ring-pink-500" : "bg-gray-800/40 hover:bg-gray-700/40"}`}
+                              className={`cursor-pointer transition-all border-0 ${selectedPlaylist === playlist.id ? "bg-pink-900/40 ring-2 ring-pink-500" : "bg-gray-800/40 hover:bg-pink-500/10 hover:ring-1 hover:ring-pink-500/50"}`}
                               onClick={() => {
                                 setSelectedPlaylist(playlist.id)
                                 setGameConfig({ ...gameConfig, sourceId: playlist.id })
@@ -274,7 +264,7 @@ export function Dashboard() {
                               searchResults.map((track) => (
                                 <Card
                                   key={track.id}
-                                  className={`cursor-pointer transition-all border-0 ${selectedAlbum === track.album.id ? "bg-pink-900/40 ring-2 ring-pink-500" : "bg-gray-800/40 hover:bg-gray-700/40"}`}
+                                  className={`cursor-pointer transition-all border-0 ${selectedAlbum === track.album.id ? "bg-pink-900/40 ring-2 ring-pink-500" : "bg-gray-800/40 hover:bg-pink-500/10 hover:ring-1 hover:ring-pink-500/50"}`}
                                   onClick={() => {
                                     setSelectedAlbum(track.album.id)
                                     setGameConfig({ ...gameConfig, sourceId: track.album.id })

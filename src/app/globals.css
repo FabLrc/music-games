@@ -249,6 +249,31 @@ button:active {
   transform: translateY(0);
 }
 
+/* Amélioration du contraste pour les liens et éléments interactifs */
+a:hover {
+  color: var(--neon-pink);
+  text-decoration: none;
+}
+
+/* Custom scrollbar pour mode sombre */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--neon-pink);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--neon-fuchsia);
+}
+
 /* Animations pour le mode Karaoké */
 @keyframes slideUp {
   0% {
