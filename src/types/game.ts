@@ -67,6 +67,7 @@ export interface GameConfiguration {
   source: "playlist" | "album" | "liked" | "random"
   sourceId?: string
   trackCount: number
+  timeLimit?: number // Temps limite pour répondre (en secondes)
 }
 
 // Statistiques de la partie

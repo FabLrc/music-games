@@ -29,6 +29,7 @@ export function Dashboard() {
     gameMode: "lyrics-quiz",
     source: "random",
     trackCount: 5,
+    timeLimit: 20,
   })
 
   // Source selection state
@@ -129,6 +130,27 @@ export function Dashboard() {
                             />
                             <span className="text-3xl font-black bg-gradient-to-r from-pink-400 to-fuchsia-500 bg-clip-text text-transparent w-12 text-center">
                               {gameConfig.trackCount}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {(gameConfig.gameMode === "blind-test-title" || gameConfig.gameMode === "blind-test-artist") && (
+                      <div className="space-y-4">
+                        <label className="text-sm font-bold text-gray-200 uppercase tracking-wide block">Temps de réponse (secondes)</label>
+                        <div className="space-y-3 bg-black/40 p-4 rounded-lg border border-white/5">
+                          <div className="flex items-center gap-4">
+                            <Slider
+                              min={5}
+                              max={60}
+                              step={5}
+                              value={[gameConfig.timeLimit || 20]}
+                              onValueChange={(value) => setGameConfig({ ...gameConfig, timeLimit: value[0] })}
+                              className="flex-1"
+                            />
+                            <span className="text-3xl font-black bg-gradient-to-r from-blue-400 to-cyan-500 bg-clip-text text-transparent w-12 text-center">
+                              {gameConfig.timeLimit || 20}s
                             </span>
                           </div>
                         </div>

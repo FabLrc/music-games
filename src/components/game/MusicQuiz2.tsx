@@ -86,8 +86,16 @@ export function MusicQuiz({ config, initialTracks, onExit }: MusicQuizProps) {
 
       setTimeout(() => {
         seek(seekTime)
-        setGameState("playing")
-        setTimeLeft(10)
+        
+        // Pour le blind test, on affiche les réponses directement
+        if (gameTrack.question.type === "title" || gameTrack.question.type === "artist") {
+          setGameState("answering")
+          setTimeLeft(config.timeLimit || 20) // Utiliser le temps configuré ou 20s par défaut
+          startAnswerTimer()
+        } else {
+          setGameState("playing")
+          setTimeLeft(10)
+        }
       }, 200)
     } catch (error) {
       console.error("Failed to load track:", error)
@@ -212,22 +220,7 @@ export function MusicQuiz({ config, initialTracks, onExit }: MusicQuizProps) {
     }
   }, [gameState, position, currentTrack, pause, startAnswerTimer])
 
-  // Auto-pause for blind test modes (after 15 seconds)
-  useEffect(() => {
-    if (gameState === "playing" && currentTrack && 
-        (currentTrack.question.type === "title" || currentTrack.question.type === "artist") && 
-        position > 0) {
-      const question = currentTrack.question as TitleQuestion | ArtistQuestion
-      const positionSeconds = position / 1000
-      const playTime = positionSeconds - question.startTime
 
-      if (playTime >= 15) { // 15 seconds of music
-        pause()
-        startAnswerTimer()
-        setTimeout(() => setGameState("answering"), 0)
-      }
-    }
-  }, [gameState, position, currentTrack, pause, startAnswerTimer])
 
   // Submit answer
   const submitAnswer = useCallback((selectedOption?: string) => {
