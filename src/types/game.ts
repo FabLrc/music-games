@@ -1,7 +1,7 @@
 import { LyricLine } from "@/lib/lrc-parser"
 
 // Types de questions disponibles
-export type QuestionType = "lyrics" | "title" | "artist" | "album"
+export type QuestionType = "lyrics" | "title" | "artist"
 
 // Mode de jeu global
 export type GameModeType = "lyrics-quiz" | "blind-test-title" | "blind-test-artist" | "survival" | "karaoke"
@@ -34,14 +34,8 @@ export interface ArtistQuestion extends BaseQuestion {
   startTime: number
 }
 
-// Question d'album
-export interface AlbumQuestion extends BaseQuestion {
-  type: "album"
-  startTime: number
-}
-
 // Union type pour toutes les questions possibles
-export type GameQuestion = LyricsQuestion | TitleQuestion | ArtistQuestion | AlbumQuestion
+export type GameQuestion = LyricsQuestion | TitleQuestion | ArtistQuestion
 
 // Track de jeu avec sa question associée
 export interface GameTrack {

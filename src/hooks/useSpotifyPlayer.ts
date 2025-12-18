@@ -14,6 +14,15 @@ export function useSpotifyPlayer() {
   const [currentTrack, setCurrentTrack] = useState<Spotify.Track | null>(null)
   const intervalRef = useRef<NodeJS.Timeout | undefined>(undefined)
   const playerRef = useRef<Spotify.Player | null>(null)
+  
+  // Refs pour suivre l'état actuel (pour éviter les stale closures)
+  const isReadyRef = useRef(false)
+  const deviceIdRef = useRef<string>("")
+
+  useEffect(() => {
+    isReadyRef.current = isReady
+    deviceIdRef.current = deviceId
+  }, [isReady, deviceId])
 
   useEffect(() => {
     if (!session?.accessToken) return
@@ -103,22 +112,33 @@ export function useSpotifyPlayer() {
         throw new Error("Not authenticated")
       }
 
-      // Wait for device to be ready (up to 10 seconds)
-      if (!isReady || !deviceId) {
+      // Wait for device to be ready (up to 10 seconds) using refs to avoid stale closures
+      if (!isReadyRef.current || !deviceIdRef.current) {
         console.log("Waiting for Spotify device to be ready...")
-        const startTime = Date.now()
-        while ((!isReady || !deviceId) && Date.now() - startTime < 10000) {
-          await new Promise(resolve => setTimeout(resolve, 500))
-        }
-        if (!isReady || !deviceId) {
-          throw new Error("Spotify device not ready. Please refresh the page and try again.")
-        }
+        
+        // Create a promise that resolves when ready or times out
+        const readyPromise = new Promise<void>((resolve, reject) => {
+          const timeoutId = setTimeout(() => {
+            reject(new Error("Spotify device not ready. Please refresh the page and try again."))
+          }, 10000)
+          
+          // Check readiness periodically using refs
+          const checkInterval = setInterval(() => {
+            if (isReadyRef.current && deviceIdRef.current) {
+              clearInterval(checkInterval)
+              clearTimeout(timeoutId)
+              resolve()
+            }
+          }, 200)
+        })
+        
+        await readyPromise
       }
 
       for (let attempt = 0; attempt < retries; attempt++) {
         try {
           const response = await fetch(
-            `https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`,
+            `https://api.spotify.com/v1/me/player/play?device_id=${deviceIdRef.current}`,
             {
               method: "PUT",
               body: JSON.stringify({ uris: uri ? [uri] : undefined }),
@@ -148,7 +168,7 @@ export function useSpotifyPlayer() {
               await fetch("https://api.spotify.com/v1/me/player", {
                 method: "PUT",
                 body: JSON.stringify({
-                  device_ids: [deviceId],
+                  device_ids: [deviceIdRef.current],
                   play: false,
                 }),
                 headers: {
@@ -189,7 +209,7 @@ export function useSpotifyPlayer() {
         }
       }
     },
-    [deviceId, session, isReady]
+    [session]
   )
 
   const pause = useCallback(async () => {

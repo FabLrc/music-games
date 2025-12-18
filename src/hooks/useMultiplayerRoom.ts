@@ -65,6 +65,7 @@ export function useMultiplayerRoom(roomId?: string) {
           avatar_url: payload.host_avatar_url,
           is_host: true,
           is_ready: false,
+          is_connected: true,
         });
 
         if (playerError) throw playerError;
@@ -103,12 +104,11 @@ export function useMultiplayerRoom(roomId?: string) {
 
         if (roomError) throw new Error('Room not found');
 
-        // Vérifier le nombre de joueurs
+        // Vérifier le nombre de joueurs (compter tous les joueurs, pas seulement ceux connectés)
         const { count } = await supabase
           .from('room_players')
           .select('*', { count: 'exact', head: true })
-          .eq('room_id', room.id)
-          .eq('is_connected', true);
+          .eq('room_id', room.id);
 
         if (count && count >= 10) {
           throw new Error('Room is full (max 10 players)');
@@ -142,6 +142,7 @@ export function useMultiplayerRoom(roomId?: string) {
             avatar_url: payload.avatar_url,
             is_host: false,
             is_ready: false,
+            is_connected: true,
           });
 
           if (playerError) throw playerError;
@@ -240,8 +241,10 @@ export function useMultiplayerRoom(roomId?: string) {
   }, [session]);
 
   // Charger l'état du lobby
-  const loadLobbyState = useCallback(async (roomId: string) => {
-    setIsLoading(true);
+  const loadLobbyState = useCallback(async (roomId: string, showLoading = true) => {
+    if (showLoading) {
+      setIsLoading(true);
+    }
     try {
       // Charger la salle
       const { data: room, error: roomError } = await supabase
@@ -286,7 +289,9 @@ export function useMultiplayerRoom(roomId?: string) {
       const message = err instanceof Error ? err.message : 'Failed to load lobby';
       setError(message);
     } finally {
-      setIsLoading(false);
+      if (showLoading) {
+        setIsLoading(false);
+      }
     }
   }, [session]);
 
@@ -295,6 +300,15 @@ export function useMultiplayerRoom(roomId?: string) {
     if (!roomId) return;
 
     loadLobbyState(roomId);
+
+    // Debounce pour éviter trop de rechargements
+    let reloadTimeout: NodeJS.Timeout | null = null;
+    const debouncedReload = () => {
+      if (reloadTimeout) clearTimeout(reloadTimeout);
+      reloadTimeout = setTimeout(() => {
+        loadLobbyState(roomId, false); // Ne pas afficher le loader pour les updates en temps réel
+      }, 200);
+    };
 
     // Créer un channel Realtime
     const realtimeChannel = supabase.channel(`room:${roomId}`)
@@ -306,9 +320,7 @@ export function useMultiplayerRoom(roomId?: string) {
           table: 'room_players',
           filter: `room_id=eq.${roomId}`,
         },
-        () => {
-          loadLobbyState(roomId);
-        }
+        debouncedReload
       )
       .on(
         'postgres_changes',
@@ -318,9 +330,7 @@ export function useMultiplayerRoom(roomId?: string) {
           table: 'rooms',
           filter: `id=eq.${roomId}`,
         },
-        () => {
-          loadLobbyState(roomId);
-        }
+        debouncedReload
       )
       .on(
         'postgres_changes',
@@ -330,15 +340,20 @@ export function useMultiplayerRoom(roomId?: string) {
           table: 'chat_messages',
           filter: `room_id=eq.${roomId}`,
         },
-        () => {
-          loadLobbyState(roomId);
-        }
+        debouncedReload
       )
+      .on('broadcast', { event: 'game_event' }, (payload) => {
+        // Handler pour les événements de jeu broadcastés
+        console.log('Game event received:', payload);
+        // Note: Les composants qui utilisent ce hook peuvent écouter ces événements
+        // via une callback supplémentaire si nécessaire dans le futur
+      })
       .subscribe();
 
     setChannel(realtimeChannel);
 
     return () => {
+      if (reloadTimeout) clearTimeout(reloadTimeout);
       realtimeChannel.unsubscribe();
     };
   }, [roomId, loadLobbyState]);

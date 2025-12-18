@@ -36,7 +36,6 @@ export function MusicQuiz({ config, initialTracks, onExit }: MusicQuizProps) {
     isReady,
     position,
     duration,
-    currentTrack: spotifyTrack,
     play,
     pause,
     resume,
@@ -475,7 +474,6 @@ export function MusicQuiz({ config, initialTracks, onExit }: MusicQuizProps) {
     ? currentTrack.question.type === "lyrics" ? "🎤 Paroles" 
     : currentTrack.question.type === "title" ? "🎵 Devinez le Titre"
     : currentTrack.question.type === "artist" ? "🎸 Devinez l'Artiste"
-    : currentTrack.question.type === "album" ? "💿 Devinez l'Album"
     : "Question"
     : ""
 
@@ -513,7 +511,7 @@ export function MusicQuiz({ config, initialTracks, onExit }: MusicQuizProps) {
             <>
               <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg bg-black/50 border-2 border-pink-500/30">
                 {/* Modes blind test : masquer uniquement l'information à deviner */}
-                {(currentTrack.question.type === "title" || currentTrack.question.type === "artist" || currentTrack.question.type === "album") && gameState !== "revealing" ? (
+                {(currentTrack.question.type === "title" || currentTrack.question.type === "artist") && gameState !== "revealing" ? (
                   <>
                     {/* Toujours masquer la couverture en blind test (sinon trop facile) */}
                     <div className="relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0 rounded border-2 border-gray-600 bg-gray-800 flex items-center justify-center">
@@ -522,7 +520,7 @@ export function MusicQuiz({ config, initialTracks, onExit }: MusicQuizProps) {
                     <div className="flex-1 min-w-0">
                       {/* Masquer SEULEMENT l'information à deviner */}
                       <p className="font-bold text-lg sm:text-xl text-gray-500 truncate">
-                        {currentTrack.question.type === "title" || currentTrack.question.type === "album" 
+                        {currentTrack.question.type === "title"
                           ? "🎵 ???" 
                           : currentTrack.track.name
                         }

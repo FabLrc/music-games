@@ -120,6 +120,20 @@ Améliorer l'expérience visuelle et rendre le jeu plus satisfaisant.
 - **ShakeEffect** : Composant wrapper pour secouer n'importe quel élément + overlay rouge pour les erreurs
 - Tous les effets sont déclenchés par des triggers numériques pour éviter les re-renders inutiles
 
+## Phase 4.5 : Corrections & Robustesse ✅ TERMINÉE
+- [x] **Modes & Générateurs**
+    - Retiré le type `AlbumQuestion` non implémenté des types et de toutes les références dans le code.
+- [x] **Multijoueur**
+    - Comptage des joueurs sur la table `room_players` sans dépendre de `is_connected` pour respecter la limite de 10 joueurs.
+    - Lors de l'insertion d'un joueur, `is_connected` est maintenant explicitement défini à `true`.
+    - Ajout d'un handler de réception pour les events broadcastés dans `useMultiplayerRoom`.
+    - Réduction des rechargements complets du lobby en temps réel avec debounce (200ms) et `showLoading=false` pour éviter de remettre `isLoading` à chaque notification.
+- [x] **Lecteur Spotify**
+    - Remplacement de la boucle d'attente active `while (!isReady ...)` par un système de Promise avec timeout, utilisant des refs pour éviter les stale closures.
+- [x] **Code mort / bruit**
+    - Suppression de la déstructuration inutile `currentTrack: spotifyTrack` dans `MusicQuiz2`.
+    - Suppression du fichier legacy `src/components/game/MusicQuiz.old.tsx`.
+
 ## Phase 5 : Social & Progression 🚧 EN COURS
 - [x] **Système de Progression** ✅ IMPLÉMENTÉ
     - ✅ Niveaux de compte avec expérience (XP).
