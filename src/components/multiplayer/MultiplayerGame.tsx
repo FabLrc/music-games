@@ -12,6 +12,9 @@ import { usePlayerProgress } from '@/hooks/usePlayerProgress';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { ComboAnimation } from '@/components/game/ComboAnimation';
+import { ParticleEffect } from '@/components/game/ParticleEffect';
+import { ShakeEffect, WrongAnswerEffect } from '@/components/game/ShakeEffect';
 import type { GameEvent } from '@/types/multiplayer';
 
 interface MultiplayerGameProps {
@@ -35,6 +38,10 @@ export function MultiplayerGame({ roomId }: MultiplayerGameProps) {
   const [score, setScore] = useState(0);
   const [hasAnswered, setHasAnswered] = useState(false);
   const [playerScores, setPlayerScores] = useState<Map<string, number>>(new Map());
+  const [particleTrigger, setParticleTrigger] = useState(0);
+  const [shakeTrigger, setShakeTrigger] = useState(0);
+  const [comboTrigger, setComboTrigger] = useState(0);
+  const [combo, setCombo] = useState(0);
 
   // Le host contrôle la progression du jeu
   const isHost = lobbyState?.currentUser?.is_host || false;
@@ -66,6 +73,18 @@ export function MultiplayerGame({ roomId }: MultiplayerGameProps) {
       const newScore = isCorrect ? score + 1 : score;
       setScore(newScore);
       setPlayerScores((prev) => new Map(prev).set(session.user.id!, newScore));
+
+      // Trigger visual effects
+      if (isCorrect) {
+        setParticleTrigger(prev => prev + 1);
+        setCombo(prev => prev + 1);
+        if (combo + 1 > 1) {
+          setComboTrigger(prev => prev + 1);
+        }
+      } else {
+        setShakeTrigger(prev => prev + 1);
+        setCombo(0);
+      }
 
       // Broadcast la réponse aux autres joueurs
       const event: GameEvent = {
@@ -118,6 +137,8 @@ export function MultiplayerGame({ roomId }: MultiplayerGameProps) {
       playerScores,
       roomId,
       router,
+      earnXP,
+      combo,
     ]
   );
 
@@ -134,10 +155,20 @@ export function MultiplayerGame({ roomId }: MultiplayerGameProps) {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="h-screen flex flex-col overflow-hidden p-4 md:p-8">
+      {/* Visual Effects */}
+      <ComboAnimation combo={combo} trigger={comboTrigger} />
+      <ParticleEffect 
+        trigger={particleTrigger} 
+        type={combo >= 5 ? "streak" : "success"}
+        intensity={combo >= 10 ? "high" : combo >= 5 ? "medium" : "low"}
+      />
+      <WrongAnswerEffect trigger={shakeTrigger} />
+
+      <ShakeEffect trigger={shakeTrigger} intensity="medium">
+        <div className="w-full max-w-4xl mx-auto flex flex-col h-full overflow-y-auto custom-scrollbar">
         {/* En-tête avec scores */}
-        <div className="mb-6">
+        <div className="mb-6 shrink-0">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-2xl font-bold">
@@ -170,7 +201,7 @@ export function MultiplayerGame({ roomId }: MultiplayerGameProps) {
         </div>
 
         {/* Question */}
-        <Card className="mb-6">
+        <Card className="mb-6 shrink-0">
           <CardContent className="pt-6">
             <h2 className="text-xl font-semibold mb-2">{currentQuestion.question}</h2>
             {currentQuestion.hint && (
@@ -180,7 +211,7 @@ export function MultiplayerGame({ roomId }: MultiplayerGameProps) {
         </Card>
 
         {/* Réponses */}
-        <div className="grid gap-3">
+        <div className="grid gap-3 shrink-0">
           {currentQuestion.answers.map((answer, index) => (
             <Button
               key={index}
@@ -210,7 +241,7 @@ export function MultiplayerGame({ roomId }: MultiplayerGameProps) {
 
         {/* Feedback */}
         {hasAnswered && (
-          <Card className="mt-6">
+          <Card className="mt-6 shrink-0">
             <CardContent className="pt-6 text-center">
               <p className="text-lg">
                 {currentQuestionIndex < 9
@@ -221,6 +252,7 @@ export function MultiplayerGame({ roomId }: MultiplayerGameProps) {
           </Card>
         )}
       </div>
+      </ShakeEffect>
     </div>
   );
 }

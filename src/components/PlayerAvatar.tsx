@@ -22,30 +22,35 @@ export function PlayerAvatar({
   levelInfo,
   size = 48
 }: PlayerAvatarProps) {
-  const radius = size / 2
-  const strokeWidth = 3
-  const normalizedRadius = radius - strokeWidth / 2
+  const strokeWidth = 4
+  // Calcul pour placer le cercle à l'extérieur de l'avatar
+  // Rayon de l'avatar (size/2) + Espace (3px) + Demi-épaisseur du trait
+  const normalizedRadius = (size / 2) + 3 + (strokeWidth / 2)
   const circumference = normalizedRadius * 2 * Math.PI
+  
+  // Taille du conteneur = Diamètre du cercle + Épaisseur du trait + Marge
+  const containerSize = Math.ceil((normalizedRadius + strokeWidth / 2) * 2)
+  
   const progress = levelInfo?.progressPercent || 0
   const strokeDashoffset = circumference - (progress / 100) * circumference
 
   return (
-    <div className="relative inline-flex items-center justify-center" style={{ width: size + 12, height: size + 12 }}>
+    <div className="relative inline-flex items-center justify-center" style={{ width: containerSize, height: containerSize }}>
       {/* Cercle de progression XP */}
       <svg
-        height={size + 12}
-        width={size + 12}
+        height={containerSize}
+        width={containerSize}
         className="absolute -rotate-90"
         style={{ filter: 'drop-shadow(0 0 4px rgba(236, 72, 153, 0.5))' }}
       >
         {/* Cercle de fond */}
         <circle
-          stroke="rgba(255, 255, 255, 0.1)"
+          stroke="rgba(255, 255, 255, 0.2)"
           fill="transparent"
           strokeWidth={strokeWidth}
           r={normalizedRadius}
-          cx={(size + 12) / 2}
-          cy={(size + 12) / 2}
+          cx={containerSize / 2}
+          cy={containerSize / 2}
         />
         {/* Cercle de progression */}
         <circle
@@ -56,8 +61,8 @@ export function PlayerAvatar({
           style={{ strokeDashoffset, transition: 'stroke-dashoffset 0.5s ease' }}
           strokeLinecap="round"
           r={normalizedRadius}
-          cx={(size + 12) / 2}
-          cy={(size + 12) / 2}
+          cx={containerSize / 2}
+          cy={containerSize / 2}
         />
         <defs>
           <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -68,7 +73,7 @@ export function PlayerAvatar({
       </svg>
 
       {/* Avatar */}
-      <div className="relative" style={{ width: size, height: size }}>
+      <div className="relative z-10" style={{ width: size, height: size }}>
         {imageUrl ? (
           <Image
             src={imageUrl}
@@ -88,7 +93,7 @@ export function PlayerAvatar({
 
         {/* Badge de niveau */}
         <div 
-          className="absolute -bottom-1 -right-1 bg-gradient-to-r from-pink-600 to-purple-600 rounded-full border-2 border-black flex items-center justify-center font-bold text-white"
+          className="absolute -bottom-1 -right-1 bg-gradient-to-r from-pink-600 to-purple-600 rounded-full border-2 border-black flex items-center justify-center font-bold text-white z-20"
           style={{ 
             width: size / 2.2, 
             height: size / 2.2,

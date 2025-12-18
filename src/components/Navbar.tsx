@@ -17,15 +17,17 @@ export function Navbar() {
   const { progress, levelInfo } = usePlayerProgress();
 
   const navItems = [
-    { label: 'Jouer', path: '/' },
-    { label: 'Karaoké', path: '/karaoke' },
-    { label: 'Classement', path: '/leaderboard' },
+    { label: 'ACCUEIL', path: '/', icon: '🏠', disabled: false },
+    { label: 'CLASSEMENT', path: '/leaderboard', icon: '🏆', disabled: false },
+    { label: 'PROFIL', path: '/profile', icon: '👤', disabled: true },
+    { label: 'SOCIAL', path: '/social', icon: '👥', disabled: true },
+    { label: 'BOUTIQUE', path: '/shop', icon: '🛍️', disabled: true },
   ];
 
   if (!session) return null;
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-white/10 bg-black/80 backdrop-blur-md">
+    <nav className="sticky top-0 z-50 w-full border-b border-white/10 bg-black/80 backdrop-blur-md shrink-0">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo / Titre */}
@@ -39,18 +41,30 @@ export function Navbar() {
           {/* Navigation */}
           <div className="hidden md:flex items-center gap-1">
             {navItems.map((item) => (
-              <Button
-                key={item.path}
-                variant={pathname === item.path ? 'default' : 'ghost'}
-                className={`${
-                  pathname === item.path
-                    ? 'bg-pink-600 hover:bg-pink-700 text-white'
-                    : 'text-white hover:bg-white/10'
-                }`}
-                onClick={() => router.push(item.path)}
-              >
-                {item.label}
-              </Button>
+              <div key={item.path} className="relative group">
+                <Button
+                  variant={pathname === item.path ? 'default' : 'ghost'}
+                  disabled={item.disabled}
+                  className={`${
+                    pathname === item.path
+                      ? 'bg-pink-600 hover:bg-pink-700 text-white'
+                      : item.disabled 
+                        ? 'text-gray-500 cursor-not-allowed hover:bg-transparent' 
+                        : 'text-white hover:bg-white/10'
+                  } font-bold tracking-wide`}
+                  onClick={() => !item.disabled && router.push(item.path)}
+                >
+                  <span className="mr-2">{item.icon}</span>
+                  {item.label}
+                </Button>
+                {item.disabled && (
+                  <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                    <span className="bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap border border-gray-700">
+                      Bientôt disponible
+                    </span>
+                  </div>
+                )}
+              </div>
             ))}
           </div>
 
@@ -89,19 +103,23 @@ export function Navbar() {
 
         {/* Navigation Mobile */}
         <div className="md:hidden pb-3">
-          <div className="flex gap-1 overflow-x-auto">
+          <div className="flex gap-1 overflow-x-auto custom-scrollbar">
             {navItems.map((item) => (
               <Button
                 key={item.path}
                 variant={pathname === item.path ? 'default' : 'ghost'}
                 size="sm"
+                disabled={item.disabled}
                 className={`whitespace-nowrap ${
                   pathname === item.path
                     ? 'bg-pink-600 hover:bg-pink-700 text-white'
-                    : 'text-white hover:bg-white/10'
+                    : item.disabled
+                      ? 'text-gray-500 cursor-not-allowed'
+                      : 'text-white hover:bg-white/10'
                 }`}
-                onClick={() => router.push(item.path)}
+                onClick={() => !item.disabled && router.push(item.path)}
               >
+                <span className="mr-2">{item.icon}</span>
                 {item.label}
               </Button>
             ))}

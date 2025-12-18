@@ -106,10 +106,10 @@ export function MultiplayerLobby({ roomId }: MultiplayerLobbyProps) {
   const { room, players, messages, currentUser } = lobbyState;
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="h-screen flex flex-col overflow-hidden p-4 md:p-8">
+      <div className="w-full max-w-7xl mx-auto flex flex-col h-full space-y-4">
         {/* En-tête */}
-        <div className="mb-6">
+        <div className="shrink-0">
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-3xl font-bold">Lobby</h1>
             <Button onClick={handleLeave} variant="outline">
@@ -130,17 +130,17 @@ export function MultiplayerLobby({ roomId }: MultiplayerLobbyProps) {
         </div>
 
         {error && (
-          <Card className="mb-6 border-destructive">
+          <Card className="mb-6 border-destructive shrink-0">
             <CardContent className="pt-6">
               <p className="text-destructive">{error}</p>
             </CardContent>
           </Card>
         )}
 
-        <div className="grid lg:grid-cols-3 gap-6">
+        <div className="grid lg:grid-cols-3 gap-6 flex-1 overflow-hidden">
           {/* Liste des joueurs */}
-          <div className="lg:col-span-2">
-            <Card>
+          <div className="lg:col-span-2 h-full overflow-y-auto custom-scrollbar">
+            <Card className="h-full flex flex-col">
               <CardHeader>
                 <CardTitle>Joueurs ({players.filter(p => p.is_connected).length}/10)</CardTitle>
                 <CardDescription>
@@ -149,8 +149,8 @@ export function MultiplayerLobby({ roomId }: MultiplayerLobbyProps) {
                     : 'En attente que tous les joueurs soient prêts...'}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
+              <CardContent className="flex-1 flex flex-col">
+                <div className="space-y-2 flex-1 overflow-y-auto custom-scrollbar">
                   {players
                     .filter((p) => p.is_connected)
                     .map((player) => (
@@ -165,7 +165,7 @@ export function MultiplayerLobby({ roomId }: MultiplayerLobbyProps) {
                 </div>
 
                 {/* Boutons d'action */}
-                <div className="mt-6 flex gap-2">
+                <div className="mt-6 flex gap-2 shrink-0">
                   {currentUser && !currentUser.is_host && (
                     <Button
                       onClick={handleToggleReady}
@@ -190,14 +190,14 @@ export function MultiplayerLobby({ roomId }: MultiplayerLobbyProps) {
           </div>
 
           {/* Chat */}
-          <div>
+          <div className="h-full flex flex-col overflow-hidden">
             <Card className="h-full flex flex-col">
               <CardHeader>
                 <CardTitle>Chat</CardTitle>
               </CardHeader>
               <CardContent className="flex-1 flex flex-col min-h-0">
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto mb-4 space-y-2 max-h-96">
+                <div className="flex-1 overflow-y-auto mb-4 space-y-2 custom-scrollbar">
                   {messages.map((msg) => (
                     <div key={msg.id} className="text-sm">
                       <span className="font-semibold">{msg.username}:</span>{' '}
@@ -212,7 +212,7 @@ export function MultiplayerLobby({ roomId }: MultiplayerLobbyProps) {
                 </div>
 
                 {/* Input de chat */}
-                <form onSubmit={handleSendMessage} className="flex gap-2">
+                <form onSubmit={handleSendMessage} className="flex gap-2 shrink-0">
                   <Input
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}

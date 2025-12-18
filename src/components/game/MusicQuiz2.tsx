@@ -12,6 +12,9 @@ import { Progress } from "@/components/ui/progress"
 import { DynamicBackground } from "@/components/DynamicBackground"
 import { Karaoke } from "@/components/game/Karaoke"
 import { XPReward } from "@/components/XPReward"
+import { ComboAnimation } from "@/components/game/ComboAnimation"
+import { ParticleEffect } from "@/components/game/ParticleEffect"
+import { ShakeEffect, WrongAnswerEffect } from "@/components/game/ShakeEffect"
 import { generateQuestions } from "@/lib/question-generator"
 import { getCurrentLyric } from "@/lib/lrc-parser"
 import { GameConfiguration, LyricsQuestion, TitleQuestion, ArtistQuestion, RoundResult, GameStats } from "@/types/game"
@@ -47,6 +50,9 @@ export function MusicQuiz({ config, initialTracks, onExit }: MusicQuizProps) {
   const [timeLeft, setTimeLeft] = useState(10)
   const [xpGain, setXpGain] = useState<XPGain | null>(null)
   const [showXPReward, setShowXPReward] = useState(false)
+  const [particleTrigger, setParticleTrigger] = useState(0)
+  const [shakeTrigger, setShakeTrigger] = useState(0)
+  const [comboTrigger, setComboTrigger] = useState(0)
   const hasStarted = useRef(false)
 
   // Game engine
@@ -243,7 +249,23 @@ export function MusicQuiz({ config, initialTracks, onExit }: MusicQuizProps) {
     if (!currentTrack) return
 
     const answerToCheck = selectedOption || ""
-    const { isGameOver } = engineSubmitAnswer(answerToCheck, config.gameMode === "survival")
+    const { isGameOver, isCorrect } = engineSubmitAnswer(answerToCheck, config.gameMode === "survival")
+
+    // Trigger visual effects based on answer correctness
+    if (isCorrect) {
+      // Trigger particles for correct answer
+      setParticleTrigger(prev => prev + 1)
+      
+      // Trigger combo animation if combo will be > 1 after this answer
+      // Since gameStats is updated in engineSubmitAnswer, we need to calculate the new combo
+      const newCombo = gameStats.combo + 1
+      if (newCombo > 1) {
+        setComboTrigger(prev => prev + 1)
+      }
+    } else {
+      // Trigger shake and wrong answer effects for incorrect answer
+      setShakeTrigger(prev => prev + 1)
+    }
 
     setGameState("revealing")
     resume()
@@ -261,7 +283,7 @@ export function MusicQuiz({ config, initialTracks, onExit }: MusicQuizProps) {
         }, 100)
       }
     }, 5000)
-  }, [currentTrack, engineSubmitAnswer, config.gameMode, resume, pause, nextTrack, currentTrackIndex, loadTrackForRound])
+  }, [currentTrack, engineSubmitAnswer, config.gameMode, resume, pause, nextTrack, currentTrackIndex, loadTrackForRound, gameStats.combo])
 
   // Timer countdown
   useEffect(() => {
@@ -323,7 +345,7 @@ export function MusicQuiz({ config, initialTracks, onExit }: MusicQuizProps) {
   // Loading screen
   if (gameState === "loading") {
     return (
-      <DynamicBackground className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-8 gap-4">
+      <DynamicBackground className="flex h-screen flex-col items-center justify-center p-4 sm:p-8 gap-4 overflow-hidden">
         <Card className="w-full min-w-[320px] max-w-md border-2 neon-border-magenta bg-gradient-to-br from-gray-900 to-black shadow-2xl">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold text-white">Préparation de la partie</CardTitle>
@@ -359,14 +381,14 @@ export function MusicQuiz({ config, initialTracks, onExit }: MusicQuizProps) {
       : 0
 
     return (
-      <DynamicBackground className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-8 gap-4">
-        <Card className="w-full min-w-[320px] max-w-2xl border-2 neon-border-magenta bg-gradient-to-br from-gray-900 to-black shadow-2xl">
-          <CardHeader className="text-center bg-gradient-to-r from-pink-900/30 via-fuchsia-900/30 to-pink-900/30 pb-8">
+      <DynamicBackground className="flex h-screen flex-col items-center justify-center p-4 sm:p-8 gap-4 overflow-hidden">
+        <Card className="w-full min-w-[320px] max-w-2xl max-h-full flex flex-col overflow-hidden border-2 neon-border-magenta bg-gradient-to-br from-gray-900 to-black shadow-2xl">
+          <CardHeader className="text-center bg-gradient-to-r from-pink-900/30 via-fuchsia-900/30 to-pink-900/30 pb-8 shrink-0">
             <CardTitle className="text-5xl font-black tracking-wider uppercase text-white" style={{ fontFamily: 'Impact, Arial Black, sans-serif', textShadow: '0 0 20px rgba(236, 72, 153, 0.8), 0 0 40px rgba(236, 72, 153, 0.5)' }}>
               🎶 FINAL SCORE 🎶
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6 px-8 pb-8">
+          <CardContent className="space-y-6 px-8 pb-8 overflow-y-auto custom-scrollbar">
             <div className="text-center p-8 bg-gradient-to-r from-pink-500/20 via-fuchsia-500/20 to-pink-500/20 rounded-lg border-2 border-pink-400/50">
               <p className="text-8xl font-black mb-4" style={{
                 background: 'linear-gradient(45deg, #ec4899, #d946ef, #c026d3)',
@@ -458,8 +480,18 @@ export function MusicQuiz({ config, initialTracks, onExit }: MusicQuizProps) {
     : ""
 
   return (
-    <DynamicBackground className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-8 gap-4">
-      <Card className="w-full min-w-[320px] max-w-2xl border-2 neon-border-magenta bg-gradient-to-br from-gray-900 to-black shadow-2xl">
+    <DynamicBackground className="flex h-screen flex-col items-center justify-center p-4 sm:p-8 gap-4 overflow-hidden">
+      {/* Visual Effects */}
+      <ComboAnimation combo={gameStats.combo} trigger={comboTrigger} />
+      <ParticleEffect 
+        trigger={particleTrigger} 
+        type={gameStats.combo >= 5 ? "streak" : "success"}
+        intensity={gameStats.combo >= 10 ? "high" : gameStats.combo >= 5 ? "medium" : "low"}
+      />
+      <WrongAnswerEffect trigger={shakeTrigger} />
+      
+      <ShakeEffect trigger={shakeTrigger} intensity="medium">
+        <Card className="w-full min-w-[320px] max-w-2xl max-h-full overflow-y-auto custom-scrollbar border-2 neon-border-magenta bg-gradient-to-br from-gray-900 to-black shadow-2xl">
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle className="text-white">
@@ -623,6 +655,7 @@ export function MusicQuiz({ config, initialTracks, onExit }: MusicQuizProps) {
           )}
         </CardContent>
       </Card>
+      </ShakeEffect>
     </DynamicBackground>
   )
 }

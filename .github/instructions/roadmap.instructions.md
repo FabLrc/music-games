@@ -99,16 +99,26 @@ Permettre aux utilisateurs de jouer ensemble.
 - `/supabase/setup.sql` : Schéma de base de données mis à jour
 - `/MULTIPLAYER_SETUP.md` : Documentation de configuration
 
-## Phase 4 : UX & "Juice"
-Rendre l'expérience plus satisfaisante visuellement.
+## Phase 4 : UX & "Juice" ✅ TERMINÉE
+Améliorer l'expérience visuelle et rendre le jeu plus satisfaisant.
 
-- [ ] **Feedback Visuel Avancé**
-    - Animations de combo (x2, x3...).
-    - Particules lors d'une bonne réponse.
-    - Shake effect lors d'une erreur.
+- [x] **Feedback Visuel Avancé**
+    - ✅ Animations de combo (x2, x3...) avec échelle et couleurs progressives
+    - ✅ Particules lors d'une bonne réponse (étoiles, cœurs, notes de musique)
+    - ✅ Shake effect lors d'une erreur avec flash rouge
+    - ✅ Fichiers créés :
+        - `/src/components/game/ComboAnimation.tsx` : Affichage animé des combos
+        - `/src/components/game/ParticleEffect.tsx` : Système de particules
+        - `/src/components/game/ShakeEffect.tsx` : Effets de secousse et erreur
+    - ✅ Intégration dans MusicQuiz2 et MultiplayerGame
+    - ✅ Animations CSS personnalisées ajoutées à globals.css
+    - ✅ Utilisation de Framer Motion pour des animations fluides
 
-- [ ] **Visualisation Audio Réelle (Expérimental)**
-    - Ajouter une option pour utiliser le microphone du navigateur pour capturer l'audio système (si l'utilisateur joue sur enceintes) et animer le background avec de vraies données FFT.
+**Détails techniques** :
+- **ComboAnimation** : Animation avec rotation, échelle, et couleurs qui évoluent selon le combo (vert→bleu→jaune→orange→violet)
+- **ParticleEffect** : 3 types (success, perfect, streak) avec intensité variable, particules qui explosent du centre
+- **ShakeEffect** : Composant wrapper pour secouer n'importe quel élément + overlay rouge pour les erreurs
+- Tous les effets sont déclenchés par des triggers numériques pour éviter les re-renders inutiles
 
 ## Phase 5 : Social & Progression 🚧 EN COURS
 - [x] **Système de Progression** ✅ IMPLÉMENTÉ

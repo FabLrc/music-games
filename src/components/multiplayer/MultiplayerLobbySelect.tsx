@@ -131,23 +131,23 @@ export function MultiplayerLobbySelect({ onBack }: MultiplayerLobbySelectProps) 
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="h-full flex flex-col space-y-4 overflow-hidden">
+      <div className="flex items-center justify-between shrink-0">
         <Button onClick={onBack} variant="ghost" className="text-white hover:text-pink-400">
           ← Retour au menu
         </Button>
       </div>
 
       {error && (
-        <Card className="border-red-500 bg-red-900/20">
+        <Card className="border-red-500 bg-red-900/20 shrink-0">
           <CardContent className="pt-6">
             <p className="text-red-400 font-bold">⚠️ {error}</p>
           </CardContent>
         </Card>
       )}
 
-      <Tabs defaultValue="create" value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 h-14 bg-black/40 border border-white/10 p-1 rounded-lg mb-6">
+      <Tabs defaultValue="create" value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full flex-1 flex flex-col overflow-hidden">
+        <TabsList className="grid w-full grid-cols-3 h-14 shrink-0 bg-black/40 border border-white/10 p-1 rounded-lg mb-4">
           <TabsTrigger value="create" className="text-lg font-bold data-[state=active]:bg-blue-600 data-[state=active]:text-white">
             ➕ CRÉER
           </TabsTrigger>
@@ -159,16 +159,16 @@ export function MultiplayerLobbySelect({ onBack }: MultiplayerLobbySelectProps) 
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="create" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <TabsContent value="create" className="flex-1 flex flex-col overflow-hidden data-[state=active]:flex space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 overflow-hidden">
             {/* Left Column: Game Mode & Settings */}
-            <div className="lg:col-span-7 space-y-6">
+            <div className="lg:col-span-7 h-full overflow-y-auto custom-scrollbar pr-2 space-y-4">
               <Card className="border-2 border-white/10 bg-black/60 backdrop-blur-md">
-                <CardHeader>
-                  <CardTitle className="text-2xl font-bold text-white">Configuration de la salle</CardTitle>
+                <CardHeader className="py-4">
+                  <CardTitle className="text-xl md:text-2xl font-bold text-white">Configuration de la salle</CardTitle>
                   <CardDescription>Paramètres de la partie multijoueur</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-8">
+                <CardContent className="space-y-6 pb-4">
                   <GameModeSelector
                     selectedMode={gameConfig.gameMode}
                     onModeChange={(mode) => setGameConfig({ ...gameConfig, gameMode: mode })}
@@ -212,13 +212,13 @@ export function MultiplayerLobbySelect({ onBack }: MultiplayerLobbySelectProps) 
             </div>
 
             {/* Right Column: Music Source */}
-            <div className="lg:col-span-5 space-y-6">
-              <Card className="border-2 border-white/10 bg-black/60 backdrop-blur-md h-full">
-                <CardHeader>
-                  <CardTitle className="text-2xl font-bold text-white">Source Musicale</CardTitle>
+            <div className="lg:col-span-5 h-full overflow-y-auto custom-scrollbar pr-2 space-y-4">
+              <Card className="border-2 border-white/10 bg-black/60 backdrop-blur-md min-h-min">
+                <CardHeader className="py-4">
+                  <CardTitle className="text-xl md:text-2xl font-bold text-white">Source Musicale</CardTitle>
                   <CardDescription>Choix des morceaux pour tous les joueurs</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-6 pb-4">
                   <div className="grid grid-cols-2 gap-3">
                     <Button
                       variant="outline"
@@ -364,10 +364,10 @@ export function MultiplayerLobbySelect({ onBack }: MultiplayerLobbySelectProps) 
             </div>
           </div>
 
-          <div className="flex justify-center pt-8">
+          <div className="flex justify-center pt-2 pb-4 shrink-0">
             <Button
               onClick={handleCreateRoom}
-              className="w-full max-w-md bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 hover:from-blue-600 hover:via-cyan-600 hover:to-blue-700 text-white font-black text-2xl py-8 border-2 border-blue-400 shadow-2xl shadow-blue-500/50 hover:shadow-blue-500/80 hover:scale-105 transition-all duration-200 uppercase tracking-widest"
+              className="w-full max-w-md bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-600 hover:from-blue-600 hover:via-cyan-600 hover:to-blue-700 text-white font-black text-xl md:text-2xl py-6 md:py-8 border-2 border-blue-400 shadow-2xl shadow-blue-500/50 hover:shadow-blue-500/80 hover:scale-105 transition-all duration-200 uppercase tracking-widest"
               size="lg"
               disabled={
                 isLoading ||
@@ -381,7 +381,7 @@ export function MultiplayerLobbySelect({ onBack }: MultiplayerLobbySelectProps) 
           </div>
         </TabsContent>
 
-        <TabsContent value="join" className="flex justify-center py-12">
+        <TabsContent value="join" className="flex-1 flex flex-col justify-center items-center py-12">
           <Card className="w-full max-w-md border-2 border-white/10 bg-black/60 backdrop-blur-md">
             <CardHeader>
               <CardTitle className="text-2xl font-bold text-white text-center">Rejoindre une partie</CardTitle>
@@ -406,7 +406,7 @@ export function MultiplayerLobbySelect({ onBack }: MultiplayerLobbySelectProps) 
           </Card>
         </TabsContent>
 
-        <TabsContent value="matchmaking" className="flex justify-center py-12">
+        <TabsContent value="matchmaking" className="flex-1 flex flex-col justify-center items-center py-12">
           <Card className="w-full max-w-md border-2 border-white/10 bg-black/60 backdrop-blur-md">
             <CardHeader>
               <CardTitle className="text-2xl font-bold text-white text-center">Matchmaking</CardTitle>

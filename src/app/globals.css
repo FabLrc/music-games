@@ -307,3 +307,53 @@ a:hover {
     filter: drop-shadow(0 0 30px rgba(236, 72, 153, 0.8));
   }
 }
+/* Animations pour les effets visuels de jeu (Phase 4) */
+@keyframes correctAnswer {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px 10px rgba(16, 185, 129, 0.3);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+@keyframes wrongAnswer {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+  20%, 40%, 60%, 80% { transform: translateX(10px); }
+}
+
+@keyframes comboScale {
+  0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+  50% { transform: scale(1.2) rotate(10deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes particleBurst {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--tx), var(--ty)) scale(0);
+    opacity: 0;
+  }
+}
+
+.correct-answer-effect {
+  animation: correctAnswer 0.6s ease-out;
+}
+
+.wrong-answer-effect {
+  animation: wrongAnswer 0.5s ease-in-out;
+}
+
+.combo-effect {
+  animation: comboScale 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}

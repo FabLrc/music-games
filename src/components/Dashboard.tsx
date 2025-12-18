@@ -1,21 +1,35 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useSession, signOut } from "next-auth/react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Slider } from "@/components/ui/slider"
 import { DynamicBackground } from "@/components/DynamicBackground"
-import { GameModeSelector } from "@/components/game/GameModeSelector"
 import { MultiplayerLobbySelect } from "@/components/multiplayer/MultiplayerLobbySelect"
 import { MusicQuiz } from "@/components/game/MusicQuiz2"
 import { GameConfiguration, GameModeType } from "@/types/game"
 import { useSpotifyPlayer } from "@/hooks/useSpotifyPlayer"
 
 const MAX_TRACKS = 20
+
+const GAME_MODES = [
+  { id: "lyrics-quiz" as GameModeType, name: "Lyrics Quiz", icon: "🎤", description: "Devinez les paroles manquantes" },
+  { id: "blind-test-title" as GameModeType, name: "Blind Test", icon: "🎵", description: "Devinez le titre" },
+  { id: "blind-test-artist" as GameModeType, name: "Artiste", icon: "🎸", description: "Devinez l'artiste" },
+  { id: "survival" as GameModeType, name: "Survival", icon: "⚡", description: "Une seule vie" },
+  { id: "karaoke" as GameModeType, name: "Karaoké", icon: "🎙️", description: "Chantez en live" },
+]
+
+const SOURCE_OPTIONS = [
+  { id: "random", icon: "🎲", label: "Aléatoire" },
+  { id: "liked", icon: "❤️", label: "Likés" },
+  { id: "playlist", icon: "📜", label: "Playlist" },
+  { id: "album", icon: "💽", label: "Album" },
+]
 
 export function Dashboard() {
   const { data: session } = useSession()
@@ -65,263 +79,314 @@ export function Dashboard() {
     setIsPlaying(false)
   }
 
+  // Get current mode info for preview
+  const currentMode = useMemo(() => GAME_MODES.find(m => m.id === gameConfig.gameMode), [gameConfig.gameMode])
+  const currentSource = useMemo(() => SOURCE_OPTIONS.find(s => s.id === gameConfig.source), [gameConfig.source])
+  const selectedPlaylistInfo = useMemo(() => playlists.find(p => p.id === gameConfig.sourceId), [playlists, gameConfig.sourceId])
+
+  // Check if game can start
+  const canStartGame = useMemo(() => {
+    if (!isReady) return false
+    if (gameConfig.source === "playlist" && !gameConfig.sourceId) return false
+    if (gameConfig.source === "album" && !gameConfig.sourceId) return false
+    return true
+  }, [isReady, gameConfig.source, gameConfig.sourceId])
+
   if (isPlaying) {
     return <MusicQuiz config={gameConfig} onExit={handleExitGame} />
   }
 
   return (
-    <DynamicBackground className="flex min-h-screen flex-col p-4 md:p-8">
-      <div className="w-full max-w-7xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="flex items-center justify-start py-4">
-          <h2 className="text-3xl font-bold text-white">
+    <DynamicBackground className="flex h-[calc(100vh-4rem)] flex-col p-3 md:p-4 overflow-hidden">
+      <div className="w-full max-w-6xl mx-auto flex flex-col h-full gap-3">
+        {/* Header compact */}
+        <div className="flex items-center justify-between shrink-0">
+          <h2 className="text-lg md:text-xl font-bold text-white">
             Bienvenue, {session?.user?.name} 👋
           </h2>
         </div>
 
-        {/* Main Content */}
-        <Tabs defaultValue="solo" value={activeTab} onValueChange={(v) => setActiveTab(v as "solo" | "multiplayer")} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 h-16 bg-black/60 border border-white/10 p-1 rounded-xl mb-8">
-            <TabsTrigger value="solo" className="text-xl font-bold data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-fuchsia-600 data-[state=active]:text-white h-full rounded-lg transition-all">
-              🎮 MODE SOLO
+        {/* Mode Tabs - More compact */}
+        <Tabs defaultValue="solo" value={activeTab} onValueChange={(v) => setActiveTab(v as "solo" | "multiplayer")} className="w-full flex-1 flex flex-col overflow-hidden">
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 h-11 shrink-0 bg-black/70 border border-white/10 p-1 rounded-full mb-3">
+            <TabsTrigger value="solo" className="text-sm font-bold data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-fuchsia-600 data-[state=active]:text-white rounded-full transition-all">
+              🎮 Solo
             </TabsTrigger>
-            <TabsTrigger value="multiplayer" className="text-xl font-bold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-600 data-[state=active]:text-white h-full rounded-lg transition-all">
-              👥 MULTIJOUEUR
+            <TabsTrigger value="multiplayer" className="text-sm font-bold data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-600 data-[state=active]:text-white rounded-full transition-all">
+              👥 Multi
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="solo" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              {/* Left Column: Game Mode & Settings */}
-              <div className="lg:col-span-7 space-y-6">
-                <Card className="border-2 border-white/10 bg-black/60 backdrop-blur-md">
-                  <CardHeader>
-                    <CardTitle className="text-2xl font-bold text-white">Configuration de la partie</CardTitle>
-                    <CardDescription>Personnalisez votre expérience de jeu</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-8">
-                    <GameModeSelector
-                      selectedMode={gameConfig.gameMode}
-                      onModeChange={(mode) => setGameConfig({ ...gameConfig, gameMode: mode })}
-                    />
-
-                    {gameConfig.gameMode !== "survival" && (
-                      <div className="space-y-4">
-                        <label className="text-sm font-bold text-gray-200 uppercase tracking-wide block">Nombre de titres</label>
-                        <div className="space-y-3 bg-black/40 p-4 rounded-lg border border-white/5">
-                          <div className="flex items-center gap-4">
-                            <Slider
-                              min={1}
-                              max={MAX_TRACKS}
-                              step={1}
-                              value={[gameConfig.trackCount]}
-                              onValueChange={(value) => setGameConfig({ ...gameConfig, trackCount: value[0] })}
-                              className="flex-1"
-                            />
-                            <span className="text-3xl font-black bg-gradient-to-r from-pink-400 to-fuchsia-500 bg-clip-text text-transparent w-12 text-center">
-                              {gameConfig.trackCount}
-                            </span>
-                          </div>
+          <TabsContent value="solo" className="flex-1 flex flex-col overflow-hidden data-[state=active]:flex gap-3">
+            {/* Main Grid - 3 columns layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 flex-1 overflow-hidden">
+              
+              {/* Column 1: Game Modes */}
+              <Card className="border border-white/10 bg-black/50 backdrop-blur-md overflow-hidden">
+                <CardContent className="p-3 h-full flex flex-col">
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Mode de jeu</h3>
+                  <div className="grid grid-cols-1 gap-2 flex-1 overflow-y-auto custom-scrollbar">
+                    {GAME_MODES.map((mode) => (
+                      <button
+                        key={mode.id}
+                        onClick={() => setGameConfig({ ...gameConfig, gameMode: mode.id })}
+                        className={`flex items-center gap-3 p-3 rounded-lg text-left transition-all ${
+                          gameConfig.gameMode === mode.id
+                            ? "bg-gradient-to-r from-pink-500/90 to-fuchsia-600/90 text-white shadow-lg shadow-pink-500/30 ring-1 ring-pink-400"
+                            : "bg-white/5 hover:bg-white/10 text-gray-200 hover:text-white"
+                        }`}
+                      >
+                        <span className="text-2xl w-10 text-center">{mode.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm">{mode.name}</p>
+                          <p className="text-[11px] text-gray-300/80">{mode.description}</p>
                         </div>
-                      </div>
-                    )}
+                      </button>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
 
-                    {(gameConfig.gameMode === "blind-test-title" || gameConfig.gameMode === "blind-test-artist") && (
-                      <div className="space-y-4">
-                        <label className="text-sm font-bold text-gray-200 uppercase tracking-wide block">Temps de réponse (secondes)</label>
-                        <div className="space-y-3 bg-black/40 p-4 rounded-lg border border-white/5">
-                          <div className="flex items-center gap-4">
-                            <Slider
-                              min={5}
-                              max={60}
-                              step={5}
-                              value={[gameConfig.timeLimit || 20]}
-                              onValueChange={(value) => setGameConfig({ ...gameConfig, timeLimit: value[0] })}
-                              className="flex-1"
-                            />
-                            <span className="text-3xl font-black bg-gradient-to-r from-blue-400 to-cyan-500 bg-clip-text text-transparent w-12 text-center">
-                              {gameConfig.timeLimit || 20}s
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
+              {/* Column 2: Music Source */}
+              <Card className="border border-white/10 bg-black/50 backdrop-blur-md overflow-hidden">
+                <CardContent className="p-3 h-full flex flex-col">
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Source musicale</h3>
+                  
+                  {/* Source buttons - 2x2 grid compact */}
+                  <div className="grid grid-cols-2 gap-1.5 mb-3">
+                    {SOURCE_OPTIONS.map((source) => (
+                      <button
+                        key={source.id}
+                        onClick={() => setGameConfig({ ...gameConfig, source: source.id as GameConfiguration["source"], sourceId: undefined })}
+                        className={`flex items-center justify-center gap-1.5 p-2 rounded-lg text-xs font-medium transition-all ${
+                          gameConfig.source === source.id
+                            ? "bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white shadow-md"
+                            : "bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white"
+                        }`}
+                      >
+                        <span>{source.icon}</span>
+                        <span>{source.label}</span>
+                      </button>
+                    ))}
+                  </div>
 
-              {/* Right Column: Music Source */}
-              <div className="lg:col-span-5 space-y-6">
-                <Card className="border-2 border-white/10 bg-black/60 backdrop-blur-md h-full">
-                  <CardHeader>
-                    <CardTitle className="text-2xl font-bold text-white">Source Musicale</CardTitle>
-                    <CardDescription>D'où viennent les chansons ?</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <div className="grid grid-cols-2 gap-3">
-                      <Button
-                        variant="outline"
-                        onClick={() => setGameConfig({ ...gameConfig, source: "random", sourceId: undefined })}
-                        className={gameConfig.source === "random" 
-                          ? "bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white font-bold border-2 border-pink-400 shadow-lg shadow-pink-500/50 py-6" 
-                          : "border-2 border-gray-600 bg-transparent text-white font-semibold py-6 hover:bg-pink-500/20 hover:border-pink-500/60 hover:shadow-lg hover:shadow-pink-500/30 transition-all"}
-                      >
-                        🎲 ALÉATOIRE
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => setGameConfig({ ...gameConfig, source: "liked", sourceId: undefined })}
-                        className={gameConfig.source === "liked" 
-                          ? "bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white font-bold border-2 border-pink-400 shadow-lg shadow-pink-500/50 py-6" 
-                          : "border-2 border-gray-600 bg-transparent text-white font-semibold py-6 hover:bg-pink-500/20 hover:border-pink-500/60 hover:shadow-lg hover:shadow-pink-500/30 transition-all"}
-                      >
-                        ❤️ LIKÉS
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => setGameConfig({ ...gameConfig, source: "playlist", sourceId: undefined })}
-                        className={gameConfig.source === "playlist" 
-                          ? "bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white font-bold border-2 border-pink-400 shadow-lg shadow-pink-500/50 py-6" 
-                          : "border-2 border-gray-600 bg-transparent text-white font-semibold py-6 hover:bg-pink-500/20 hover:border-pink-500/60 hover:shadow-lg hover:shadow-pink-500/30 transition-all"}
-                      >
-                        📜 PLAYLIST
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => setGameConfig({ ...gameConfig, source: "album", sourceId: undefined })}
-                        className={gameConfig.source === "album" 
-                          ? "bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white font-bold border-2 border-pink-400 shadow-lg shadow-pink-500/50 py-6" 
-                          : "border-2 border-gray-600 bg-transparent text-white font-semibold py-6 hover:bg-pink-500/20 hover:border-pink-500/60 hover:shadow-lg hover:shadow-pink-500/30 transition-all"}
-                      >
-                        💽 ALBUM
-                      </Button>
-                    </div>
-
-                    {/* Playlist Selection */}
-                    {gameConfig.source === "playlist" && (
-                      <div className="space-y-3 pt-4 border-t border-gray-700 animate-in fade-in slide-in-from-top-2">
-                        <label className="text-sm font-bold text-gray-200 uppercase tracking-wide block">Vos Playlists</label>
-                        <div className="max-h-[400px] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                          {playlists.map((playlist) => (
-                            <Card
-                              key={playlist.id}
-                              className={`cursor-pointer transition-all border-0 ${selectedPlaylist === playlist.id ? "bg-pink-900/40 ring-2 ring-pink-500" : "bg-gray-800/40 hover:bg-pink-500/10 hover:ring-1 hover:ring-pink-500/50"}`}
-                              onClick={() => {
-                                setSelectedPlaylist(playlist.id)
-                                setGameConfig({ ...gameConfig, sourceId: playlist.id })
-                              }}
-                            >
-                              <CardContent className="p-3 flex items-center gap-3">
-                                {playlist.images[0] && (
-                                  <Image
-                                    src={playlist.images[0].url}
-                                    alt={playlist.name}
-                                    width={48}
-                                    height={48}
-                                    className="rounded shadow-md"
-                                  />
-                                )}
-                                <div className="flex-1 min-w-0">
-                                  <p className="font-semibold text-white truncate">{playlist.name}</p>
-                                  <p className="text-sm text-gray-400">{playlist.tracks.total} titres</p>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Search (Album/Random) */}
-                    {(gameConfig.source === "album" || gameConfig.source === "random") && (
-                      <div className="space-y-3 pt-4 border-t border-gray-700 animate-in fade-in slide-in-from-top-2">
-                        <label className="text-sm font-bold text-gray-200 uppercase tracking-wide block">
-                          {gameConfig.source === "album" ? "Rechercher un album" : "Rechercher des chansons"}
-                        </label>
-                        <div className="flex gap-2">
-                          <Input
-                            placeholder="Rechercher..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                            className="bg-gray-900/70 border-gray-600 text-white placeholder:text-gray-500"
-                          />
-                          <Button 
-                            onClick={handleSearch}
-                            className="bg-pink-500 hover:bg-pink-600 text-white font-semibold border-2 border-pink-400"
+                  {/* Playlist Selection */}
+                  {gameConfig.source === "playlist" && (
+                    <div className="flex-1 overflow-y-auto custom-scrollbar animate-in fade-in slide-in-from-top-2">
+                      <div className="grid grid-cols-1 gap-1.5">
+                        {playlists.map((playlist) => (
+                          <button
+                            key={playlist.id}
+                            onClick={() => {
+                              setSelectedPlaylist(playlist.id)
+                              setGameConfig({ ...gameConfig, sourceId: playlist.id })
+                            }}
+                            className={`flex items-center gap-2 p-2 rounded-lg text-left transition-all ${
+                              selectedPlaylist === playlist.id
+                                ? "bg-pink-500/30 ring-1 ring-pink-500"
+                                : "bg-white/5 hover:bg-white/10"
+                            }`}
                           >
-                            🔍
-                          </Button>
-                        </div>
+                            {playlist.images[0] && (
+                              <Image
+                                src={playlist.images[0].url}
+                                alt={playlist.name}
+                                width={32}
+                                height={32}
+                                className="rounded"
+                              />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-white text-xs truncate">{playlist.name}</p>
+                              <p className="text-[10px] text-gray-400">{playlist.tracks.total} titres</p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-                        {searchResults.length > 0 && (
-                          <div className="max-h-[400px] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                            {gameConfig.source === "random" ? (
-                              <p className="text-sm text-green-400 font-medium">
-                                ✅ {searchResults.length} chansons trouvées
-                              </p>
-                            ) : (
-                              searchResults.map((track) => (
-                                <Card
+                  {/* Search (Album/Random) */}
+                  {(gameConfig.source === "album" || gameConfig.source === "random") && (
+                    <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in slide-in-from-top-2">
+                      <div className="flex gap-1.5 mb-2">
+                        <Input
+                          placeholder={gameConfig.source === "album" ? "Rechercher album..." : "Rechercher..."}
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                          className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 h-8 text-xs"
+                        />
+                        <Button 
+                          onClick={handleSearch}
+                          className="bg-pink-500 hover:bg-pink-600 text-white h-8 w-8 p-0 shrink-0"
+                          size="sm"
+                        >
+                          🔍
+                        </Button>
+                      </div>
+
+                      {searchResults.length > 0 && (
+                        <div className="flex-1 overflow-y-auto custom-scrollbar">
+                          {gameConfig.source === "random" ? (
+                            <p className="text-xs text-green-400 font-medium p-2 bg-green-500/10 rounded-lg">
+                              ✅ {searchResults.length} chansons trouvées
+                            </p>
+                          ) : (
+                            <div className="grid grid-cols-1 gap-1.5">
+                              {searchResults.map((track) => (
+                                <button
                                   key={track.id}
-                                  className={`cursor-pointer transition-all border-0 ${selectedAlbum === track.album.id ? "bg-pink-900/40 ring-2 ring-pink-500" : "bg-gray-800/40 hover:bg-pink-500/10 hover:ring-1 hover:ring-pink-500/50"}`}
                                   onClick={() => {
                                     setSelectedAlbum(track.album.id)
                                     setGameConfig({ ...gameConfig, sourceId: track.album.id })
                                   }}
+                                  className={`flex items-center gap-2 p-2 rounded-lg text-left transition-all ${
+                                    selectedAlbum === track.album.id
+                                      ? "bg-pink-500/30 ring-1 ring-pink-500"
+                                      : "bg-white/5 hover:bg-white/10"
+                                  }`}
                                 >
-                                  <CardContent className="p-3 flex items-center gap-3">
-                                    {track.album?.images?.length > 0 ? (
-                                      <Image
-                                        src={track.album.images[2]?.url || track.album.images[0]?.url || ""}
-                                        alt={track.album.name}
-                                        width={48}
-                                        height={48}
-                                        className="rounded shadow-md"
-                                      />
-                                    ) : (
-                                      <div className="w-12 h-12 rounded bg-gray-700 flex items-center justify-center">
-                                        <span className="text-xl">🎵</span>
-                                      </div>
-                                    )}
-                                    <div className="flex-1 min-w-0">
-                                      <p className="font-semibold text-white truncate">{track.album.name}</p>
-                                      <p className="text-sm text-gray-400 truncate">
-                                        {track.artists.map((a) => a.name).join(", ")}
-                                      </p>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              ))
-                            )}
-                          </div>
+                                  {track.album?.images?.length > 0 ? (
+                                    <Image
+                                      src={track.album.images[2]?.url || track.album.images[0]?.url || ""}
+                                      alt={track.album.name}
+                                      width={32}
+                                      height={32}
+                                      className="rounded"
+                                    />
+                                  ) : (
+                                    <div className="w-8 h-8 rounded bg-gray-700 flex items-center justify-center text-sm">🎵</div>
+                                  )}
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-medium text-white text-xs truncate">{track.album.name}</p>
+                                    <p className="text-[10px] text-gray-400 truncate">{track.artists.map((a) => a.name).join(", ")}</p>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Column 3: Preview & Launch */}
+              <Card className="border border-white/10 bg-black/50 backdrop-blur-md overflow-hidden">
+                <CardContent className="p-3 h-full flex flex-col">
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Configuration</h3>
+                  
+                  {/* Session Preview */}
+                  <div className="flex-1 flex flex-col gap-3 overflow-y-auto custom-scrollbar">
+                    {/* Selected mode preview */}
+                    <div className="bg-gradient-to-br from-pink-500/20 to-fuchsia-600/20 rounded-xl p-3 border border-pink-500/30">
+                      <div className="flex items-center gap-3">
+                        <span className="text-3xl">{currentMode?.icon}</span>
+                        <div>
+                          <p className="font-bold text-white">{currentMode?.name}</p>
+                          <p className="text-xs text-gray-300">{currentMode?.description}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Source info */}
+                    <div className="flex justify-between items-center py-2 px-3 bg-white/5 rounded-lg">
+                      <span className="text-xs text-gray-400">Source</span>
+                      <span className="text-white text-sm font-medium">{currentSource?.icon} {currentSource?.label}</span>
+                    </div>
+                    
+                    {gameConfig.source === "playlist" && selectedPlaylistInfo && (
+                      <div className="flex items-center gap-2 py-2 px-3 bg-white/5 rounded-lg">
+                        {selectedPlaylistInfo.images[0] && (
+                          <Image
+                            src={selectedPlaylistInfo.images[0].url}
+                            alt={selectedPlaylistInfo.name}
+                            width={28}
+                            height={28}
+                            className="rounded"
+                          />
+                        )}
+                        <span className="text-white text-xs font-medium truncate">{selectedPlaylistInfo.name}</span>
+                      </div>
+                    )}
+
+                    {/* Track count slider */}
+                    {gameConfig.gameMode !== "survival" && (
+                      <div className="bg-white/5 rounded-lg p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs text-gray-400">Nombre de titres</span>
+                          <span className="text-lg font-black bg-gradient-to-r from-pink-400 to-fuchsia-500 bg-clip-text text-transparent">
+                            {gameConfig.trackCount}
+                          </span>
+                        </div>
+                        <Slider
+                          min={1}
+                          max={MAX_TRACKS}
+                          step={1}
+                          value={[gameConfig.trackCount]}
+                          onValueChange={(value) => setGameConfig({ ...gameConfig, trackCount: value[0] })}
+                        />
+                      </div>
+                    )}
+                    
+                    {/* Time limit for blind test */}
+                    {(gameConfig.gameMode === "blind-test-title" || gameConfig.gameMode === "blind-test-artist") && (
+                      <div className="bg-white/5 rounded-lg p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs text-gray-400">Temps de réponse</span>
+                          <span className="text-lg font-black bg-gradient-to-r from-blue-400 to-cyan-500 bg-clip-text text-transparent">
+                            {gameConfig.timeLimit || 20}s
+                          </span>
+                        </div>
+                        <Slider
+                          min={5}
+                          max={60}
+                          step={5}
+                          value={[gameConfig.timeLimit || 20]}
+                          onValueChange={(value) => setGameConfig({ ...gameConfig, timeLimit: value[0] })}
+                        />
+                      </div>
+                    )}
+
+                    {/* Validation messages */}
+                    {!canStartGame && (
+                      <div className="mt-auto">
+                        {!isReady && (
+                          <p className="text-xs text-yellow-400 bg-yellow-500/10 p-2 rounded-lg">
+                            ⏳ Connexion à Spotify...
+                          </p>
+                        )}
+                        {isReady && gameConfig.source === "playlist" && !gameConfig.sourceId && (
+                          <p className="text-xs text-orange-400 bg-orange-500/10 p-2 rounded-lg">
+                            📜 Sélectionnez une playlist
+                          </p>
+                        )}
+                        {isReady && gameConfig.source === "album" && !gameConfig.sourceId && (
+                          <p className="text-xs text-orange-400 bg-orange-500/10 p-2 rounded-lg">
+                            💽 Recherchez et sélectionnez un album
+                          </p>
                         )}
                       </div>
                     )}
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
+                  </div>
 
-            {/* Start Button */}
-            <div className="flex justify-center pt-8 pb-12">
-              <Button
-                onClick={handleStartSoloGame}
-                className="w-full max-w-md bg-gradient-to-r from-pink-500 via-fuchsia-500 to-pink-600 hover:from-pink-600 hover:via-fuchsia-600 hover:to-pink-700 text-white font-black text-2xl py-8 border-2 border-pink-400 shadow-2xl shadow-pink-500/50 hover:shadow-pink-500/80 hover:scale-105 transition-all duration-200 uppercase tracking-widest"
-                size="lg"
-                disabled={
-                  !isReady ||
-                  (gameConfig.source === "playlist" && !gameConfig.sourceId) ||
-                  (gameConfig.source === "album" && !gameConfig.sourceId) ||
-                  (gameConfig.source === "random" && searchResults.length === 0)
-                }
-              >
-                {!isReady ? "Chargement Spotify..." : "🎸 LANCER LA PARTIE 🎸"}
-              </Button>
+                  {/* Start Button */}
+                  <Button
+                    onClick={handleStartSoloGame}
+                    className="w-full mt-4 bg-gradient-to-r from-pink-500 via-fuchsia-500 to-pink-600 hover:from-pink-600 hover:via-fuchsia-600 hover:to-pink-700 text-white font-bold text-sm py-3 border border-pink-400/50 shadow-xl shadow-pink-500/40 hover:shadow-pink-500/60 hover:scale-[1.02] transition-all duration-200 uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    size="lg"
+                    disabled={!canStartGame}
+                  >
+                    {!isReady ? "⏳ Chargement..." : "🎸 Lancer la partie"}
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
 
-          <TabsContent value="multiplayer">
+          <TabsContent value="multiplayer" className="flex-1 overflow-hidden data-[state=active]:flex flex-col">
             <MultiplayerLobbySelect onBack={() => setActiveTab("solo")} />
           </TabsContent>
         </Tabs>

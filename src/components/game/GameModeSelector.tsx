@@ -54,15 +54,15 @@ export function GameModeSelector({ selectedMode, onModeChange }: GameModeSelecto
             onClick={() => onModeChange(mode.id)}
             className={
               selectedMode === mode.id
-                ? "bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white font-bold border-2 border-pink-400 shadow-lg shadow-pink-500/50 hover:shadow-pink-500/70 py-8 h-auto flex-col items-start"
-                : "border-2 border-gray-600 hover:border-pink-400/50 bg-transparent text-white font-semibold py-8 h-auto hover:bg-gray-800/50 flex-col items-start"
+                ? "bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white font-bold border-2 border-pink-400 shadow-lg shadow-pink-500/50 hover:shadow-pink-500/70 py-3 h-auto flex-col items-start"
+                : "border-2 border-gray-600 hover:border-pink-400/50 bg-transparent text-white font-semibold py-3 h-auto hover:bg-gray-800/50 flex-col items-start"
             }
           >
             <div className="flex items-center gap-2 w-full">
-              <span className="text-2xl">{mode.icon}</span>
-              <span className="text-lg">{mode.name}</span>
+              <span className="text-xl">{mode.icon}</span>
+              <span className="text-base">{mode.name}</span>
             </div>
-            <span className="text-xs text-gray-300 mt-1 text-left">
+            <span className="text-[10px] text-gray-300 mt-1 text-left leading-tight">
               {mode.description}
             </span>
           </Button>
